@@ -1,0 +1,11 @@
+# Colab already ships torch (CUDA), numpy, scipy, h5py, pandas, scikit-learn, matplotlib,
+# pillow, opencv. Do NOT reinstall torch there. UniDepth itself: pip install --no-deps (see notebook).
+transformers>=4.49
+huggingface_hub>=0.22
+einops>=0.7
+timm>=0.9
+termcolor
+imageio
+tabulate
+protobuf>=4.25
+trimesh

@@ -1,0 +1,26 @@
+# Full stack for the REMOTE GPU machine. Install torch first (scripts/setup_remote.sh):
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+# (CUDA 12.8 wheels are required for Blackwell GPUs and also run on A6000.)
+# After the first successful install, `pip freeze > requirements-lock-remote.txt`
+# is written by setup_remote.sh — cite that file for reproducibility.
+transformers>=4.49          # DA-V2 metric head needs >= 4.45; Depth Pro needs >= 4.49
+huggingface_hub>=0.22
+numpy>=1.26
+scipy>=1.11
+h5py>=3.10
+pillow>=10.0
+opencv-python-headless>=4.8
+pandas>=2.0
+scikit-learn>=1.3
+matplotlib>=3.8
+tqdm
+pytest
+# UniDepthV2 runtime deps (UniDepth itself is installed with --no-deps by setup_remote.sh)
+einops>=0.7
+timm>=0.9
+termcolor
+imageio
+tabulate
+protobuf>=4.25
+trimesh
+# gradio / wandb from UniDepth's list are demo/training-only; add them if `import unidepth` asks
