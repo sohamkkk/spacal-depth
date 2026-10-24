@@ -2,7 +2,8 @@ import numpy as np
 
 from src.calibrators.anchor_dist import (DIST_EDGES, KINDS, DistModel, FieldConfig, anchor_fields, calibrate,
                                          interval, merge_sparse_bins, min_units_for, select_model)
-from src.calibrators.anchors import anchor_keys, draw_anchors, draw_split_anchors, local_halfwidth, rank_by_key
+from src.calibrators.anchors import (anchor_keys, draw_anchors, draw_split_anchors, local_halfwidth, mix_draws,
+                                     rank_by_key)
 from src.calibrators.crc import crc_lambda_exact_units
 from src.data.prepared import PixelTable
 from src.data.splits import exchange_units
@@ -128,6 +129,21 @@ def test_auto_picks_the_kind_with_the_best_head_score():
     auto = select_model(head, d_h, np.ones(head.n_pixels), dh, "auto", 0.1, half_a)
     best = min(per_kind, key=lambda k: per_kind[k].head_score)
     assert auto.cfg == per_kind[best].cfg and auto.head_score == per_kind[best].head_score
+
+
+def test_mix_draws_takes_each_image_from_its_chosen_layout():
+    rng = np.random.default_rng(5)
+    t, d = _images(rng, 12)
+    draws = [draw_anchors(d, t.offsets, 20, rng, None if lay == "uniform" else anchor_keys(lay, t.pix, t.offsets, rng))
+             for lay in ("uniform", "cluster", "rows")]
+    choice = rng.integers(3, size=t.n_images)
+    mixed = mix_draws(draws, choice, t.offsets)
+    for i in range(t.n_images):
+        sl, src = slice(t.offsets[i], t.offsets[i + 1]), draws[choice[i]]
+        for f in ("anchor", "scale_half", "cal_half"):
+            assert (getattr(mixed, f)[sl] == getattr(src, f)[sl]).all()
+        for f in ("shift", "shift_half", "k_img"):
+            assert getattr(mixed, f)[i] == getattr(src, f)[i]
 
 
 def test_split_draw_structure_and_a_local_guarantee_under_clustered_anchors():

@@ -1,11 +1,13 @@
-"""Download every model checkpoint into $HF_HOME on the LOGIN node (which has
-internet), so GPU jobs on compute nodes can run with HF_HUB_OFFLINE=1.
-Instantiates each model once on CPU, which also triggers any secondary
-downloads and proves the imports work.
+"""Download every model checkpoint into $HF_HOME (and Metric3D's torch.hub repo and
+weights into $TORCH_HOME) on the LOGIN node (which has internet), so GPU jobs on
+compute nodes can run with HF_HUB_OFFLINE=1. Instantiates each model once on CPU,
+which also triggers any secondary downloads and proves the imports work.
+Use the same HF_HOME / TORCH_HOME as slurm/env.sh:
 
-    python -m scripts.prefetch_models            # all models
+    HF_HOME=$PWD/.hf_cache TORCH_HOME=$PWD/.torch_cache python -m scripts.prefetch_models
     python -m scripts.prefetch_models --skip-unidepth
     python -m scripts.prefetch_models --only-depthpro
+    python -m scripts.prefetch_models --only-metric3d    # needs mmengine (or mmcv) installed
 """
 
 import argparse
@@ -24,9 +26,23 @@ def main():
     ap.add_argument("--skip-unidepth", action="store_true")
     ap.add_argument("--skip-depthpro", action="store_true")
     ap.add_argument("--only-depthpro", action="store_true", help="the other checkpoints are already cached")
+    ap.add_argument("--skip-metric3d", action="store_true")
+    ap.add_argument("--only-metric3d", action="store_true", help="the other checkpoints are already cached")
     ap.add_argument("--no-instantiate", action="store_true", help="download files only (low-RAM login nodes)")
     args = ap.parse_args()
     print("HF_HOME =", os.environ.get("HF_HOME", "(default ~/.cache/huggingface)"))
+    print("TORCH_HOME =", os.environ.get("TORCH_HOME", "(default ~/.cache/torch)"))
+
+    if args.only_metric3d or not args.skip_metric3d:
+        import torch
+
+        from src.models.metric3d import HUB_REPO, Metric3DModel, local_repo
+
+        print("Metric3D entries:", torch.hub.list(HUB_REPO, trust_repo=True), "->", local_repo())
+        Metric3DModel("large", device="cpu")  # the weights download on first instantiation
+        print("metric3d-large: loads OK")
+    if args.only_metric3d:
+        return
 
     if not args.skip_depthpro:
         print("downloading", DEPTHPRO, "->", snapshot_download(DEPTHPRO))

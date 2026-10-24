@@ -2,7 +2,9 @@
 # Download + unpack evaluation data into $SPACAL_DATA_ROOT (default: ./data). ~8 GB total.
 #   bash scripts/download_data.sh            # everything
 #   bash scripts/download_data.sh nyu kitti  # subset
+#   bash scripts/download_data.sh eth3d      # not in the default set; streams 49 GB, keeps ~4 GB
 # Resumable (wget -c). Tarballs are deleted after a successful extract to save space.
+# A failing target is reported and the remaining ones still run.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 D=${SPACAL_DATA_ROOT:-data}
@@ -12,7 +14,8 @@ MARIGOLD_DATA=https://share.phys.ethz.ch/~pf/bingkedata/marigold/evaluation_data
 
 fetch() { wget -c --tries=5 --timeout=60 -O "$2" "$1"; }
 
-for t in $TARGETS; do
+get_target() {
+  local t=$1
   case "$t" in
     nyu)  # labelled subset (2.97 GB) + official 795/654 split
       mkdir -p "$D/nyu"
@@ -38,8 +41,20 @@ for t in $TARGETS; do
         tar -xzf "$D/diode/val.tar.gz" -C "$D/diode" && rm "$D/diode/val.tar.gz"
       fi
       ;;
-    *) echo "unknown target $t (use nyu kitti diode)"; exit 1 ;;
+    eth3d)  # high-res multi-view training set, 13 scenes, 454 images: streams 49 GB, keeps ~4 GB (4x reduced)
+      SPACAL_DATA_ROOT="$D" python -m scripts.prepare_eth3d --out "$D/eth3d"
+      ;;
+    *) echo "unknown target $t (use nyu kitti diode eth3d)"; exit 1 ;;
   esac
+}
+
+failed=()
+for t in $TARGETS; do
+  set +e
+  (set -e; get_target "$t")  # a failed download stops its own target only
+  rc=$?
+  set -e
+  [ $rc -eq 0 ] || { echo "!!! FAILED: $t (exit $rc); rerun to resume"; failed+=("$t"); }
 done
 
 echo "--- sanity counts"
@@ -47,4 +62,6 @@ echo "--- sanity counts"
 [ -d "$D/kitti/eigen_test" ] && echo "kitti eigen_test pngs: $(find "$D/kitti/eigen_test" -name '*.png' | wc -l)"
 [ -d "$D/kitti/val800" ] && echo "kitti val800 pngs: $(find "$D/kitti/val800" -name '*.png' | wc -l)"
 [ -d "$D/diode/val" ] && echo "diode rgb: $(find "$D/diode/val" -name '*.png' | wc -l) (expect 771)"
-du -sh "$D"
+[ -d "$D/eth3d" ] && echo "eth3d depth maps: $(find "$D/eth3d" -path '*/depth/*.npy' | wc -l) (expect 454)"
+du -sh "$D" 2>/dev/null || true
+[ ${#failed[@]} -eq 0 ] || { echo "!!! failed targets: ${failed[*]}"; exit 1; }

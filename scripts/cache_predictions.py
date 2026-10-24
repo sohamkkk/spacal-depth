@@ -111,8 +111,9 @@ def main():
             continue
 
         timings: dict[str, float] = {}
+        kw = {"focal": sample["meta"]["focal"]} if model.needs_focal else {}
         with cuda_timer(DEVICE, timings, "t_pred"), amp():
-            out = model.predict(sample["rgb"])
+            out = model.predict(sample["rgb"], **kw)
         if out["depth"].shape != sample["gt"].shape:
             raise RuntimeError(f"{sid}: pred {out['depth'].shape} vs gt {sample['gt'].shape}")
         payload = {"pred": crop(out["depth"], protocol).astype(np.float32)}
@@ -120,7 +121,7 @@ def main():
             payload["conf"] = crop(out["conf"], protocol).astype(np.float16)
         if args.flip:
             with cuda_timer(DEVICE, timings, "t_flip"), amp():
-                out_f = model.predict_flip(sample["rgb"])
+                out_f = model.predict_flip(sample["rgb"], **kw)
             payload["pred_flip"] = crop(out_f["depth"], protocol).astype(np.float16)
             if "conf" in out_f:
                 payload["conf_flip"] = crop(out_f["conf"], protocol).astype(np.float16)

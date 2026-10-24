@@ -2,8 +2,8 @@
 .venv-gpu/
 __pycache__/
 *.pyc
-data/
-!data/.gitkeep
+/data/
+!/data/.gitkeep
 cache/
 prepared/
 prepared_depthpro/
@@ -21,6 +21,7 @@ notebooks/.ipynb_checkpoints/
 .pytest_cache/
 .scratch/
 .hf_cache/
+.torch_cache/
 requirements-lock-remote.txt
 
 # results: only the figures are versioned (raw CSVs go in a release archive)
@@ -30,6 +31,8 @@ results/*
 !results/figures_qual_kitti/
 results_quick/
 results_depthpro/
+results_new/
+prepared_new/
 
 # personal, agent and planning files
 .cursor/

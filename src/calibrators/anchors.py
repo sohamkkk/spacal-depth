@@ -153,14 +153,25 @@ def anchor_keys(pattern: str, pix: dict[str, np.ndarray], offsets: np.ndarray, r
     return u + ~near
 
 
+def _anchor_stats(d, img, n_img, anchor, scale_half):
+    """shift, shift_half (0 where empty) and sigma from the anchor values d."""
+    shift = group_median(d[anchor], img[anchor], n_img)
+    shift_half = np.nan_to_num(group_median(d[scale_half], img[scale_half], n_img), nan=0.0)
+    return shift, shift_half, group_loo_spread(d[anchor], img[anchor], n_img)
+
+
 def draw_anchors(d: np.ndarray, offsets: np.ndarray, k: int, rng: np.random.Generator,
-                 key: np.ndarray | None = None) -> AnchorDraw:
+                 key: np.ndarray | None = None, avail: np.ndarray | None = None) -> AnchorDraw:
     """k anchors per image (at most half its pixels, so evaluation pixels remain).
-    key = None draws them uniformly; otherwise the k smallest keys (see anchor_keys)."""
+    key = None draws them uniformly; otherwise the k smallest keys (see anchor_keys).
+    avail restricts anchors to those pixels (e.g. where a LiDAR return exists), at most all of them."""
     n_img = len(offsets) - 1
     counts = np.diff(offsets)
     img = np.repeat(np.arange(n_img), counts)
     k_img = np.minimum(k, counts // 2)
+    if avail is not None:
+        k_img = np.minimum(k_img, np.bincount(img[avail], minlength=n_img))
+        key = (rng.random(len(img)) if key is None else key) + 1e9 * ~avail
     if k == 0:
         none = np.zeros(len(d), dtype=bool)
         zeros = np.zeros(n_img)
@@ -175,11 +186,15 @@ def draw_anchors(d: np.ndarray, offsets: np.ndarray, k: int, rng: np.random.Gene
         half_rank = rank_by_key(offsets, np.where(anchor, rng.random(len(img)), np.inf))
         scale_half = anchor & (half_rank < (k_img // 2)[img])
     cal_half = anchor & ~scale_half
-    shift = group_median(d[anchor], img[anchor], n_img)
-    shift_half = group_median(d[scale_half], img[scale_half], n_img)
-    shift_half = np.where(np.isnan(shift_half), 0.0, shift_half)
-    sigma = group_loo_spread(d[anchor], img[anchor], n_img)
-    return AnchorDraw(k, anchor, scale_half, cal_half, shift, shift_half, sigma, k_img)
+    return AnchorDraw(k, anchor, scale_half, cal_half, *_anchor_stats(d, img, n_img, anchor, scale_half), k_img)
+
+
+def with_values(draw: AnchorDraw, d_obs: np.ndarray, offsets: np.ndarray) -> AnchorDraw:
+    """The same anchor positions with shift and spread from other anchor values (e.g. a noisy sensor's)."""
+    n_img = len(offsets) - 1
+    img = np.repeat(np.arange(n_img), np.diff(offsets))
+    return AnchorDraw(draw.k, draw.anchor, draw.scale_half, draw.cal_half,
+                      *_anchor_stats(d_obs, img, n_img, draw.anchor, draw.scale_half), draw.k_img)
 
 
 def draw_split_anchors(d: np.ndarray, offsets: np.ndarray, k: int, k_random: int, rng: np.random.Generator,
@@ -201,10 +216,25 @@ def draw_split_anchors(d: np.ndarray, offsets: np.ndarray, k: int, k_random: int
     half_rank = rank_by_key(offsets, np.where(rand, rng.random(len(img)), np.inf))
     scale_half = rand & (half_rank < (k_r // 2)[img])
     cal_half = rand & ~scale_half
-    shift = group_median(d[anchor], img[anchor], n_img)
-    shift_half = np.nan_to_num(group_median(d[scale_half], img[scale_half], n_img), nan=0.0)
-    sigma = group_loo_spread(d[anchor], img[anchor], n_img)
-    return AnchorDraw(k, anchor, scale_half, cal_half, shift, shift_half, sigma, k_img)
+    return AnchorDraw(k, anchor, scale_half, cal_half, *_anchor_stats(d, img, n_img, anchor, scale_half), k_img)
+
+
+def pick(arrays: list[np.ndarray], which: np.ndarray) -> np.ndarray:
+    """Element j of arrays[which[j]] (arrays of equal shape)."""
+    out = arrays[0].copy()
+    for i in range(1, len(arrays)):
+        m = which == i
+        out[m] = arrays[i][m]
+    return out
+
+
+def mix_draws(draws: list[AnchorDraw], choice: np.ndarray, offsets: np.ndarray) -> AnchorDraw:
+    """Image i takes its anchors from draws[choice[i]] (draws of the same table, e.g. one per layout).
+    With an independent uniform choice per image, this is a draw under a uniform mixture of the rules."""
+    px = np.repeat(choice, np.diff(offsets))
+    per_px = {f: pick([getattr(dr, f) for dr in draws], px) for f in ("anchor", "scale_half", "cal_half")}
+    per_img = {f: pick([getattr(dr, f) for dr in draws], choice) for f in ("shift", "shift_half", "sigma", "k_img")}
+    return AnchorDraw(draws[0].k, **per_px, **per_img)
 
 
 def nearest_anchor_distance(row: np.ndarray, col: np.ndarray, offsets: np.ndarray, anchor: np.ndarray,

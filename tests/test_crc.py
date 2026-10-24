@@ -68,6 +68,19 @@ def test_exact_handles_ties():
     assert (np.mean(imgs[0] > lam) * 30 + 1) / 31 <= 0.4
 
 
+@pytest.mark.parametrize("n,alpha", [(4, 0.2), (9, 0.1), (19, 0.05)])
+def test_zero_budget_returns_max_residual(n, alpha):
+    """(n + 1) alpha - B == 0: only the largest residual is feasible, even with
+    many pixels whose weights do not sum to exactly 1 in floating point."""
+    rng = np.random.default_rng(n)
+    imgs = [rng.exponential(1.0, rng.integers(5000, 30000)) for _ in range(n)]
+    r, off = _csr(imgs)
+    assert crc_lambda_exact(r, off, alpha) == r.max()
+    units = np.repeat(np.arange(n), 3)
+    r3, off3 = _csr([x for x in imgs for _ in range(3)])
+    assert crc_lambda_exact_units(r3, off3, units, alpha) == r.max()
+
+
 def test_rcps_is_more_conservative_than_crc():
     rng = np.random.default_rng(2)
     imgs = [np.abs(rng.normal(size=40)) for _ in range(500)]

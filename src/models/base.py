@@ -1,8 +1,9 @@
 """Common interface for frozen metric depth models (section 9.1).
 
 `predict(rgb)` returns {"depth": (H, W) float32 metres, optional "conf": (H, W)}
-at the input resolution. Flip test-time augmentation is model-agnostic and
-lives here; models may add `gradient_uncertainty`.
+at the input resolution; models with `needs_focal` take `predict(rgb, focal=...)`
+(pixels, for the image as given). Flip test-time augmentation is model-agnostic
+and lives here; models may add `gradient_uncertainty`.
 """
 
 import time
@@ -17,12 +18,13 @@ class DepthModel:
     model_id: str = ""
     has_conf: bool = False
     has_grad_uncertainty: bool = False
+    needs_focal: bool = False
 
     def predict(self, rgb: np.ndarray) -> dict[str, np.ndarray]:
         raise NotImplementedError
 
-    def predict_flip(self, rgb: np.ndarray) -> dict[str, np.ndarray]:
-        out = self.predict(np.ascontiguousarray(rgb[:, ::-1]))
+    def predict_flip(self, rgb: np.ndarray, **kw) -> dict[str, np.ndarray]:
+        out = self.predict(np.ascontiguousarray(rgb[:, ::-1]), **kw)
         return {k: np.ascontiguousarray(v[:, ::-1]) for k, v in out.items()}
 
     def gradient_uncertainty(self, rgb: np.ndarray) -> np.ndarray:

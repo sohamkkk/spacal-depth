@@ -1,6 +1,6 @@
 """Sanity report on the prepared tables (run first in run_all_cpu.sh):
-split units per dataset (DIODE scans), and the scale of UniDepthV2's native
-confidence against the actual |log error|, pooled and within-image.
+split units per dataset (DIODE scans), and the scale of UniDepthV2's and Metric3D's
+native confidence against the actual |log error|, pooled and within-image.
 
     python -m experiments.diag_tables
 """
@@ -14,7 +14,10 @@ from src.data.splits import exchange_units
 PAIRS = [("nyu", "dav2-indoor-large"), ("kitti", "dav2-outdoor-large"),
          ("diode_indoor", "dav2-indoor-large"), ("diode_outdoor", "dav2-outdoor-large"),
          ("nyu", "unidepthv2-large"), ("kitti", "unidepthv2-large"),
-         ("diode_indoor", "unidepthv2-large"), ("diode_outdoor", "unidepthv2-large")]
+         ("diode_indoor", "unidepthv2-large"), ("diode_outdoor", "unidepthv2-large"),
+         ("nyu", "metric3d-large"), ("kitti", "metric3d-large"), ("diode_indoor", "metric3d-large"),
+         ("diode_outdoor", "metric3d-large"), ("eth3d", "metric3d-large"), ("eth3d", "unidepthv2-large"),
+         ("eth3d", "depthpro")]
 Q = [1, 10, 50, 90, 99]
 
 

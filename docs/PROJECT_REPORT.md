@@ -1,6 +1,6 @@
 # SpaCal-Depth: Guaranteed Per-Pixel Uncertainty for Frozen Monocular Metric Depth Models
 
-**Project report: review version, 21 October 2026.** All experiments are complete; every number below comes from the final runs (cluster jobs 43864, 43867 and 43885 for the two-model study; the Depth Pro runs of 19 October; job 44087 for the safety query E12 and structured anchors E13; job 44194 for the distance-aware anchor method E14) and was checked against the result files in `results/`. Statements that still need an external check are marked `[VERIFY]`; Appendix B lists them, together with the items checked against primary sources on 19 October 2026.
+**Project report: review version, 24 October 2026.** All experiments reported here are complete; every number below comes from the final runs (cluster jobs 43864, 43867 and 43885 for the two-model study; the Depth Pro runs of 19 October; job 44087 for the safety query E12 and structured anchors E13; job 44194 for the distance-aware anchor method E14; job 44276 for the calibration-versus-deployment layout study E15; job 44471 for the fourth model, Metric3D v2, and the fifth dataset, ETH3D, with one cell of it recomputed after a solver fix, Appendix A) and was checked against the result files in `results/`. Statements that still need an external check are marked `[VERIFY]`; Appendix B lists them, together with the items checked against primary sources on 19 October 2026.
 
 The report is written to be readable without a statistics background: §2–§3 are a short primer, and a glossary is at the end. Readers who know conformal prediction can skip to §1 (contributions), §7 (theory) and §9 (results).
 
@@ -8,20 +8,21 @@ The report is written to be readable without a statistics background: §2–§3 
 
 ## Abstract
 
-Monocular metric depth foundation models predict a distance in metres for every pixel of a single photo, but give no reliable statement of how wrong they might be. We wrap three frozen models (Depth Anything V2 Metric, UniDepthV2 and Depth Pro) in **conformal prediction**, a distribution-free method that turns any predictor into per-pixel intervals with a finite-sample coverage guarantee, and evaluate on NYU Depth v2, KITTI and DIODE. Three findings shape the work. (1) Pixels are not independent samples: the run-to-run variability of coverage follows the number of calibration *images* and is two orders of magnitude larger than a pixel-count analysis predicts, so guarantees must treat the image, or the scene, as the unit. Image-level guarantees slip slightly on clustered data, and scene-level versions we add fix this at a 3–12 % width cost. (2) Without extra information, the main weakness is not average coverage (which conformal calibration delivers everywhere) but its spread across images: per-image coverage ranges from about 40 % to 100 %, and each image's global scale error explains 65–79 % of that variation. (3) Given a few true depth measurements per test image ("anchors", e.g. LiDAR points), intervals become 1.3–3.7× narrower at the same 90 % average coverage, and a combined method carries both an average and a **per-image** guarantee, cutting the share of badly covered images from 9–18 % to 0–0.2 %. When no calibration data from the target domain exists, a purely within-image method still gives exact per-image coverage, but only if the anchors are a random sample of pixels: with clustered anchors its coverage falls to 26–47 % while its intervals shrink, and only the cross-image guarantees survive. Those guarantees still lose coverage far from the anchors, so we add a distance-aware variant (A-dist) that shifts and scales each pixel by its nearby anchors and calibrates separately by distance to the nearest anchor: under all five anchor layouts tested its coverage varies across distance by 0.5–1.4 points (5–15 without the distance-aware step), and with 20 or more anchors it is narrower than the existing cross-image method by 17–67 % with random, scan-line or near-only anchors and by 2–24 % with edge anchors, and as wide (within 2 %) with clustered anchors. For a safety query (the nearest depth in a region in front of the camera), a guarantee protects only the question it was calibrated for: per-pixel and average guarantees leave the region's nearest depth over-estimated in 2–24 % of images at a 10 % target, a "whole region at once" guarantee is valid but alarms on 99–100 % of images, and calibrating the query itself (the region minimum, or every lane at once) is both valid and informative. We report limitations honestly, including structured failures (mirrors, glass) that random anchors can miss.
+Monocular metric depth foundation models predict a distance in metres for every pixel of a single photo, but give no reliable statement of how wrong they might be. We wrap four frozen models (Depth Anything V2 Metric, UniDepthV2, Depth Pro and Metric3D v2) in **conformal prediction**, a distribution-free method that turns any predictor into per-pixel intervals with a finite-sample coverage guarantee, and evaluate on NYU Depth v2, KITTI, DIODE and ETH3D. Three findings shape the work. (1) Pixels are not independent samples: the run-to-run variability of coverage follows the number of calibration *images* and is two orders of magnitude larger than a pixel-count analysis predicts, so guarantees must treat the image, or the scene, as the unit. Image-level guarantees slip slightly on clustered data, and scene-level versions we add fix this at a 3–12 % width cost. With few, very different scenes the slip becomes a collapse: on ETH3D (13 scenes, 4 for calibration per split), image-level calibration covers 0.69 instead of 0.90 for Depth Pro, whose scale error changes from scene to scene, while the scene-level guarantee that would be valid gives infinite or uninformative intervals. (2) Without extra information, the main weakness is not average coverage (which conformal calibration delivers wherever calibration and test data match) but its spread across images: per-image coverage ranges from about 40 % to 100 %, and each image's global scale error explains 47–79 % of that variation (least for Metric3D v2, the one model given the true focal length). (3) Given a few true depth measurements per test image ("anchors", e.g. LiDAR points), intervals become 1.1–3.7× narrower at the same 90 % average coverage (the least for Metric3D v2, which has the least global scale error), and a combined method carries both an average and a **per-image** guarantee, cutting the share of badly covered images from 9–20 % to 0–0.2 %. When no calibration data from the target domain exists, a purely within-image method still gives exact per-image coverage, but only if the anchors are a random sample of pixels: with clustered anchors its coverage falls to 26–47 % while its intervals shrink, and only the cross-image guarantees survive. Those guarantees still lose coverage far from the anchors, so we add a distance-aware variant (A-dist) that shifts and scales each pixel by its nearby anchors and calibrates separately by distance to the nearest anchor: under all five anchor layouts tested its coverage varies across distance by 0.5–1.4 points (5–15 without the distance-aware step), and with 20 or more anchors it is narrower than the existing cross-image method by 17–67 % with random, scan-line or near-only anchors and by 2–24 % with edge anchors, and as wide (within 2 %) with clustered anchors. All cross-image anchor guarantees assume that calibration images get their anchors by the same rule as deployment; when they do not, coverage at a 0.90 target falls to 0.77 on average (0.71 on one dataset/model pair). Calibrating under every candidate layout and keeping the largest threshold restores a guarantee for each layout at 1.1–2× the width, and the distance-aware variant calibrated this way is 15–52 % narrower than the existing method calibrated the same way, except under clustered anchors. A spatial within-image baseline (LSCP) reaches the target only with 200 random anchors (0.92–0.93) and falls to 0.17–0.65 under clustered or near-only anchors. For a safety query (the nearest depth in a region in front of the camera), a guarantee protects only the question it was calibrated for: per-pixel and average guarantees leave the region's nearest depth over-estimated in 2–24 % of images at a 10 % target, a "whole region at once" guarantee is valid but alarms on 99–100 % of images, and calibrating the query itself (the region minimum, or every lane at once) is both valid and informative. We report limitations honestly, including structured failures (mirrors, glass) that random anchors can miss.
 
 ---
 
 ## 1. Contributions at a glance
 
-1. **A post-hoc, guarantee-carrying wrapper for frozen monocular metric depth foundation models**, with ten calibrators covering average, high-probability, patch, group-conditional and image-event notions of validity (§6.2, §7), nine scale maps (§6.1), and a benchmark over four datasets and three models with 20 random splits per setting (§9.2, §9.14).
-2. **Evidence that the image (or scene) is the right exchangeable unit** (§9.1, §9.8): synthetic and real calibration-size experiments match the image-count prediction, not the pixel-count one; image-level guarantees fall slightly short on scene-clustered data; scene-level versions of the image-event and patch guarantees (**V4-scene**, **K2-scene**) restore them (§9.3).
+1. **A post-hoc, guarantee-carrying wrapper for frozen monocular metric depth foundation models**, with ten calibrators covering average, high-probability, patch, group-conditional and image-event notions of validity (§6.2, §7), nine scale maps (§6.1), and a benchmark over five datasets and four models with 20 random splits per setting (§9.2, §9.14, §9.19, §9.20).
+2. **Evidence that the image (or scene) is the right exchangeable unit** (§9.1, §9.8): synthetic and real calibration-size experiments match the image-count prediction, not the pixel-count one; image-level guarantees fall slightly short on scene-clustered data; scene-level versions of the image-event and patch guarantees (**V4-scene**, **K2-scene**) restore them (§9.3). On ETH3D, with 13 heterogeneous scenes, the image-level guarantee fails outright for one model and the scene-level one has too few calibration scenes to be informative (§9.20).
 3. **A shape-versus-scale analysis** (§9.10): most per-image miscoverage comes from a single global scale error per image, which motivates test-time anchors.
 4. **A study of conformal guarantees versus the number of test-time depth anchors** (§6.4, §7.4, §9.10–§9.12), with four methods: two with average guarantees (A-rescale, A-hybrid), a within-image method with a per-image guarantee (A-local: for every image, expected coverage over anchor draws ≥ 1 − α; the within-instance argument of Mao, Martin & Reich and of Gui, Barber & Ma, applied to depth), and their hull (A-both), which carries both by the standard union argument. The measured A-local coverage matches its exact theoretical value to three decimals on every dataset.
 5. **Structured anchors** (§6.7, §9.16): with scan-line, clustered, edge or near-only anchors, A-local's per-image guarantee fails silently (coverage 0.26–0.47 under clustered anchors, with intervals narrower than under random anchors), while A-rescale, A-hybrid and A-both keep their average guarantee under every layout. Coverage also falls with distance from the nearest anchor even under random anchors.
 6. **A distance-aware anchor method, A-dist** (§6.8, §7.5, §9.17): a local shift and spread from the nearest anchors, a scale that grows with distance to the nearest anchor, the anchor variant chosen on head-train, and one scene-level threshold per distance-to-anchor bin. Under all five layouts its coverage is flat across distance, and it is up to 67 % narrower than A-hybrid with random or scan-line anchors. Spending 20 of the anchors at random and taking the hull with A-local adds a per-image guarantee (0–0.3 % short images). The mechanism is standard group-conditional (Mondrian) calibration; what we add is distance to test-time metric anchors as the grouping variable, the evaluation under realistic layouts, and the budget-split rule.
-7. **Matching the guarantee to the safety query** (§6.6, §9.15): on the nearest depth in a forward region, and per lane, we compare per-pixel, average, whole-region, query-level and lane-level calibration on the same data. Only guarantees calibrated on the query itself are both valid and informative; the image-versus-scene averaging unit has to match as well.
-8. **Diagnostic findings**: UniDepthV2's confidence map has no absolute scale and its correlation with the error changes sign across datasets (§9.6); reflective surfaces are systematically under-covered by all methods (§9.2); raw uncertainty signals cover only 3–43 % when they claim 90 % (§9.2).
+7. **Layout mismatch between calibration and deployment** (§6.9, §7.5, §9.18): calibrating under one anchor layout and deploying under another leaves coverage up to 13 points below the target (A-hybrid, clustered test anchors; 19 points on one pair); calibrating on a mixture of layouts is valid only on average over that mixture; the largest threshold over layouts is valid for each of them, and A-dist calibrated this way is 15–52 % narrower than A-hybrid calibrated the same way unless the deployed anchors are clustered. LSCP, the closest single-field spatial conformal method, run in each image, has no finite-sample guarantee here and covers 0.17–0.93 depending on the layout.
+8. **Matching the guarantee to the safety query** (§6.6, §9.15): on the nearest depth in a forward region, and per lane, we compare per-pixel, average, whole-region, query-level and lane-level calibration on the same data. Only guarantees calibrated on the query itself are both valid and informative; the image-versus-scene averaging unit has to match as well.
+9. **Diagnostic findings**: UniDepthV2's confidence map has no absolute scale and its correlation with the error changes sign across datasets (§9.6), whereas Metric3D v2's correlates positively with the error on all five datasets and is the best score on three of them (§9.19); reflective surfaces are systematically under-covered by all methods (§9.2); raw uncertainty signals cover only 3–43 % when they claim 90 % (§9.2).
 
 We do **not** claim to be the first conformal method for depth, nor the first image-level guarantee (Feldman et al. 2023 exist; they also fit each frame's scale and shift from 200 true depth pixels, the precedent for anchor rescaling), nor the factorised "difficulty × shape" score (VSCP has it), nor the hull construction (a union of prediction sets inheriting each set's guarantee is standard). The novelty is the combination, the anchor study and the evidence about exchangeable units (§4).
 
@@ -38,14 +39,16 @@ We do **not** claim to be the first conformal method for depth, nor the first im
 
 ### 2.2 Foundation models
 
-A *foundation model* is a very large model trained once on huge, diverse data, then used as-is for many tasks. We use two of the strongest publicly available metric depth foundation models:
+A *foundation model* is a very large model trained once on huge, diverse data, then used as-is for many tasks. We use four publicly available metric depth foundation models; the first two form the core study, and the other two were added after review (§9.14, §9.19):
 
 | Model | Reference | Notes |
 |---|---|---|
-| **Depth Anything V2 – Metric (DA-V2)**, Large | Yang et al., 2024 | Two versions: *indoor* (trained on synthetic Hypersim) and *outdoor* (trained on Virtual KITTI 2). Its Base and Small sizes form an ensemble for one of the scores. |
-| **UniDepthV2**, Large | Piccinelli et al., 2025 | Trained on many datasets; also outputs a per-pixel "confidence" map. |
+| **Depth Anything V2 – Metric (DA-V2)**, Large | Yang et al., 2024 | Two versions: *indoor* (trained on synthetic Hypersim) and *outdoor* (trained on Virtual KITTI 2). Its Base and Small sizes form an ensemble for one of the scores. No camera input. |
+| **UniDepthV2**, Large | Piccinelli et al., 2025 | Trained on many datasets; estimates the camera itself; also outputs a per-pixel "confidence" map. |
+| **Depth Pro** | Bochkovskii et al., 2025 | Estimates the field of view, and with it the metric scale, from each image. |
+| **Metric3D v2**, ViT-Large | Hu et al., 2024 | Predicts depth for a canonical camera and rescales it by the image's **true focal length**, which we pass in; also outputs a confidence map. |
 
-Both are kept **frozen**: never retrained or fine-tuned. Everything happens after the prediction ("post-hoc"), because most users can wrap a giant model but cannot retrain it.
+All are kept **frozen**: never retrained or fine-tuned. Everything happens after the prediction ("post-hoc"), because most users can wrap a giant model but cannot retrain it.
 
 ### 2.3 Why a single number is not enough
 
@@ -132,7 +135,7 @@ Several literature searches were run and every key paper below was opened and ch
 | **Guan** (Biometrika 2023) | Localized conformal prediction: calibration points weighted by their distance to the test point in feature space | The same localisation idea; we localise by distance to test-time metric anchors, with fixed groups shared across images instead of per-test-point weights |
 | **Gibbs, Cherian & Candès** (arXiv 2305.12616) | Coverage guaranteed over a class of covariate-defined shifts, including group-conditional coverage | A-dist's per-bin guarantee is a special case with groups defined by anchor geometry |
 | **Bairaktari, Wu & Wu, Kandinsky CP** (ICML 2025, arXiv 2502.17264) `[VERIFY: authors]` | Group-conditional coverage for overlapping, fractional groups | Fixed, disjoint distance bins are a simple special case |
-| **Jiang & Xie, LSCP** (arXiv 2412.01098) `[VERIFY: venue]` | Spatial conformal inference within one spatial field, from residuals near the new location | Mechanically close to A-dist's local shift and distance-aware scale, but calibrated within one field under spatial exchangeability, the precondition A-local needs and E13 breaks; closer to A-local than to A-dist's cross-image guarantee. Not yet run as a baseline |
+| **Jiang & Xie, LSCP** (arXiv 2412.01098) `[VERIFY: venue]` | Spatial conformal inference within one spatial field, from residuals near the new location | Mechanically close to A-dist's local shift and distance-aware scale, but calibrated within one field under spatial exchangeability, the precondition A-local needs and E13 breaks; closer to A-local than to A-dist's cross-image guarantee. Run in each image as a baseline in E15 (§9.18) |
 
 **What we claim and what we do not.** We do not claim the first conformal depth method, the first image-level guarantee, the hull construction, region-level safety calibration in general, or distance- and locality-based group-conditional calibration (A-dist's mechanism). We claim the combination in §1: a guarantee-carrying wrapper for frozen monocular metric depth models with several validity notions, evidence about the exchangeable unit with scene-level fixes, a characterisation of coverage versus test-time anchors including a method with both an average and a per-image guarantee, and, for structured anchors, distance to the nearest anchor as the calibration group with a budget-split rule for keeping the per-image guarantee. The closest papers are 2026 preprints; the search was repeated on 19 October 2026 (the works added above) and must be repeated before submission `[VERIFY]`.
 
@@ -146,8 +149,11 @@ Several literature searches were run and every key paper below was opened and ch
 | **KITTI**, Eigen test (652) + 800 Eigen-train frames | 61 drives | 1,452 | LiDAR (sparse, outdoor) |
 | **DIODE indoor**, validation | 10 scans (3 scenes) | 325 | Laser scanner |
 | **DIODE outdoor**, validation | 10 scans (3 scenes) | 446 | Laser scanner |
+| **ETH3D**, high-resolution multi-view training set | 13 scenes (indoor and outdoor) | 454 | Laser scanner, depth rendered into the DSLR views |
 
-None were used to train any of the three models, so all testing is zero-shot. DIODE's file names encode a scan number; we use the scan as its unit (10 per domain instead of 3 scenes). Valid pixels are kept on a regular grid (every 4th pixel on NYU, every 2nd on KITTI and DIODE), giving 14–24 million pixels per dataset/model pair, stored per image (a **PixelTable**) so per-image statistics are exact.
+None of NYU, KITTI and DIODE was used to train DA-V2, UniDepthV2 or Depth Pro, so testing on them is zero-shot; the Metric3D v2 paper reports NYU, KITTI, DIODE and ETH3D as zero-shot benchmarks, and UniDepthV2 and Depth Pro report ETH3D as zero-shot `[VERIFY: training-set lists of all three]`. DIODE's file names encode a scan number; we use the scan as its unit (10 per domain instead of 3 scenes). Valid pixels are kept on a regular grid (every 4th pixel on NYU, every 2nd on KITTI and DIODE, every 8th of the reduced ETH3D image), giving 7–24 million pixels per dataset/model pair, stored per image (a **PixelTable**) so per-image statistics are exact.
+
+**ETH3D details.** The ground-truth depth maps match the original, *distorted* DSLR images (6048 × 4032; the dataset's documentation says so, and an early loader that used the undistorted images was misaligned), so we feed the models the distorted images, reduced 4× to 1512 × 1008. Depth is reduced by taking, in each 4 × 4 block, the lower median of the valid values, which keeps sparse laser returns instead of sampling one pixel. The focal length passed to Metric3D v2 is the calibration's fx / 4; for a fisheye-type camera model this is exact at the image centre and approximate towards the edges. Depth beyond 80 m is ignored. The scene is the unit: each split has 3 head-train, 4 calibration and 6 test scenes (about 90, 126 and 238 images).
 
 ---
 
@@ -165,7 +171,7 @@ All scores work on the log residual `d = log y − log ŷ` except S0 (metres). T
 | S3-flip | disagreement between prediction on the image and on its mirror | test-time augmentation |
 | S3e-ens | spread of DA-V2 Small / Base / Large | model ensemble |
 | S4-grad | gradient-based uncertainty (GrUMoDepth-style) | network sensitivity |
-| S4c-conf | UniDepthV2's confidence map | native uncertainty |
+| S4c-conf | the model's confidence map (UniDepthV2; Metric3D v2, as 1 − confidence) | native uncertainty |
 | S5-learned | gradient-boosted trees fit on head-train to the 90th percentile of the error from pixel and image features | learned uncertainty |
 | S6-fact (+conf, +flip variants) | `a(image) × b(pixel)`: an image difficulty times a within-image shape | separates "how wrong is this image" from "where" |
 
@@ -250,6 +256,20 @@ Everything except λ is fitted on 200 head-train images, never on calibration da
 
 Settings: all six NYU/KITTI pairs × the five layouts of §6.7, k ∈ {5, 10, 20, 50, 200}, 3 seeds × 2 anchor draws, plain log (S2-log) and learned (S5-shape) bases, α = 0.1. The success and kill criteria were fixed before running (proposal §7.6): **S1** per-bin coverage ≥ 1 − α − 2 SE in every bin with ≥ 20 test images; **S2** median width ≤ A-hybrid's on at least 4 of 6 pairs for the uniform and rows layouts; **S3** fewer short images than A-hybrid; **kill** if the width is more than 10 % above A-hybrid everywhere.
 
+### 6.9 Calibration versus deployment layout, and LSCP (E15)
+
+Every cross-image anchor guarantee (T7, T10) assumes that calibration images get their anchors by the same rule as test images; E13 and E14 kept the two equal. In practice the calibration anchors may be simulated, or come from a different sensor or mounting. E15 (`experiments/e15_layouts.py`) fixes the test layout and calibrates each method under each of the five layouts of §6.7, plus two layout-agnostic options:
+
+- **@ℓ**: calibration images get layout ℓ. The matched case is ℓ = the test layout.
+- **@mix**: each calibration image gets one of the five layouts at random.
+- **@max**: the largest threshold over the five single-layout calibrations, per distance bin for A-dist (after each layout's bin merges are mapped back to the five bins).
+
+The methods calibrated this way are A-rescale, A-hybrid and A-dist (the -auto variant). All head-train fits (τ, A-dist's variant, bandwidths, g, bin merges and cap) use 200 head-train images with a random layout each, so the versions of one method differ only in their calibration anchors; A-dist's matched widths are therefore not identical to E14's, where the head fits used the test layout.
+
+Methods that use no calibration images run on the test anchors only: A-local; **LSCP** (`src/calibrators/lscp.py`), the spatial conformal method of Jiang & Xie applied with each image as one spatial field; and two hulls, **A-both@max** (A-hybrid@max with A-local) and **A-dist-both@max** (A-dist@max with A-local). In our LSCP, each anchor's features are the residuals of its 8 nearest other anchors, nearest first; a quantile random forest (50 trees, leaf size 5, a third of the features per split) is fitted on the anchors and predicts residual quantiles at every other pixel from its 8 nearest anchors; the interval is [Q(β), Q(1 − α + β)] with β chosen per pixel on a 5-point grid in [0, α] to minimise width. Two departures from the paper: the neighbour count is fixed rather than cross-validated (a fold of 20 anchors holds 4 points), and β is searched on a grid. Its guarantee is asymptotic (stationarity and mixing of the field) and needs at least 10 anchors per image.
+
+There is no budget split here: A-local uses the structured test anchors, so the hulls carry a per-image guarantee only when the test layout is uniform. Settings: all six NYU/KITTI pairs × five test layouts, k ∈ {20, 50, 200}, 3 seeds × 2 anchor draws, plain log score, α ∈ {0.1, 0.05}.
+
 ---
 
 ## 7. Theory: what each method guarantees, and why
@@ -305,7 +325,14 @@ Anchors are random, but drawn by the same mechanism for calibration and test ima
 
 The anchors' measured residuals enter m and s; that is allowed, because the test image's anchors are observed at test time, as in T7. Feasibility needs 9 calibration scenes per bin at α = 0.1.
 
-*Scope:* (a) **Merged bins.** A bin with fewer than 19 calibration scenes shares its neighbour's threshold, and the guarantee then holds for the merged bin, not for each part. The merge depends on calibration pixel positions (not residuals), which departs slightly from fixing the groups before seeing calibration data: the test scene does not enter the count. (b) The guarantee is an average over scenes, like T7; it says nothing about one image. (c) Calibration and test must use the same anchor rule; a layout change between calibration and deployment is not covered.
+*Scope:* (a) **Merged bins.** A bin with fewer than 19 calibration scenes shares its neighbour's threshold, and the guarantee then holds for the merged bin, not for each part. The merge depends on calibration pixel positions (not residuals), which departs slightly from fixing the groups before seeing calibration data: the test scene does not enter the count. (b) The guarantee is an average over scenes, like T7; it says nothing about one image. (c) Calibration and test must use the same anchor rule; a layout change between calibration and deployment is not covered (E15 measures what happens, §9.18; T12 gives two remedies).
+
+**T12 – Several candidate layouts (@mix, @max).** Let ℒ be a finite set of anchor rules and λ̂_ℓ the threshold calibrated with rule ℓ on the same calibration scenes (per bin for A-dist).
+
+- *@max.* λ̂_max = max over ℓ of λ̂_ℓ. If the test images use rule ℓ, then E[L_test(λ̂_max)] ≤ E[L_test(λ̂_ℓ)] ≤ α, because the loss is non-increasing in λ and λ̂_ℓ alone satisfies T7 (or T10) for rule ℓ. This holds separately for **every** ℓ ∈ ℒ, which is the property needed when the deployed rule is unknown but in ℒ. No union bound is involved: each statement is about one rule, and λ̂_max is simply at least as large as the threshold that statement needs. For A-dist, the per-bin maximum keeps each rule's guarantee for that rule's merged bins.
+- *@mix.* If each calibration and test image draws its rule independently from the same distribution over ℒ, the units stay exchangeable and T7/T10 hold on average over that distribution. Nothing is promised for a test population that uses one rule only.
+
+The price of @max is width: it is the threshold of the hardest rule in ℒ, so a broad ℒ costs every layout the width of the worst one.
 
 **T11 – A-dist-both.** With k − 20 structured and 20 uniformly random anchors, A-local on the random 20 keeps T8 exactly (k_c = 10, so 10/11 = 0.909 for every image, in expectation over the random anchors), and A-dist on all k keeps T10. Their hull inherits both (T9). This is the constructive side of a simple fact: a pixel that can never be an anchor (far from a cluster, off an edge) gets no per-image guarantee from that image's anchors alone, so per-image guarantees need some anchors placed at random.
 
@@ -317,15 +344,16 @@ The anchors' measured residuals enter m and s; that is allowed, because the test
 |---|---|---|---|
 | **E0** | How accurate are the base models on our data? | `experiments/e0_base_metrics.py` | official test subsets |
 | **E1** | On synthetic data with known truth, do the guarantees behave as theory says, and does coverage spread follow images or pixels? | `experiments/e1_synthetic.py` | 100 reps per setting |
-| **Main** (E2–E4, E6, E9) | Which scores and calibrators give the best valid intervals; conditional coverage; raw vs conformal; α sweep | `experiments/run_calibration.py` | 6 pairs (+ 4 Depth Pro pairs) × up to 9 scores × 10 calibrators × 3 α × 20 seeds |
-| **E5** | Does a guarantee survive domain shift (NYU → DIODE indoor, KITTI → DIODE outdoor), and does recalibration restore it? | `experiments/e5_shift.py` | 4 settings (+ 2 Depth Pro) × 10 seeds |
+| **Main** (E2–E4, E6, E9) | Which scores and calibrators give the best valid intervals; conditional coverage; raw vs conformal; α sweep | `experiments/run_calibration.py` | 6 pairs (+ 4 Depth Pro, 5 Metric3D and 2 more ETH3D pairs) × up to 9 scores × 10 calibrators × 3 α × 20 seeds |
+| **E5** | Does a guarantee survive domain shift (NYU → DIODE indoor, KITTI → DIODE outdoor), and does recalibration restore it? | `experiments/e5_shift.py` | 4 settings (+ 2 Depth Pro, 2 Metric3D) × 10 seeds |
 | **E8** | How does coverage variability depend on calibration size: images or pixels? | `experiments/e8_calsize.py` | NYU, KITTI × 50 seeds |
 | **E10** | Cost in milliseconds | `experiments/e10_cost.py` | – |
-| **E11** | Coverage, spread and width versus the number of anchors k | `experiments/e11_anchors.py` | 6 pairs (+ NYU, KITTI with Depth Pro) × 8 k × 5 seeds × 6 anchor draws |
+| **E11** | Coverage, spread and width versus the number of anchors k | `experiments/e11_anchors.py` | 6 pairs (+ NYU, KITTI with Depth Pro and with Metric3D) × 8 k × 5 seeds × 6 anchor draws |
 | **E12** | Does the interval protect a safety query (nearest depth in a forward region, per lane), and at what false-alarm cost? | `experiments/e12_safety.py` | NYU, KITTI × 3 models × 2 α × 20 seeds |
 | **E13** | Do the anchor guarantees survive structured (non-random) anchors? | `experiments/e11_anchors.py --pattern` | NYU, KITTI × 3 models × 5 layouts × 3 k × 5 seeds × 3 draws |
 | **E14** | Does a distance-aware anchor method keep coverage even across distance to the nearest anchor, at what width, and does a budget split restore the per-image guarantee? | `experiments/e11_anchors.py --dist-kinds` | NYU, KITTI × 3 models × 5 layouts × 5 k × 3 seeds × 2 draws × 2 bases |
-| diagnostics | Units per dataset; what UniDepth's confidence measures | `experiments/diag_tables.py` | – |
+| **E15** | What happens when calibration and test anchors follow different layouts, do a layout mixture or the largest threshold over layouts fix it, and how does LSCP compare? | `experiments/e15_layouts.py` | NYU, KITTI × 3 models × 5 test layouts × 7 calibration variants × 3 k × 3 seeds × 2 draws × 2 α |
+| diagnostics | Units per dataset; what UniDepth's and Metric3D's confidence measure | `experiments/diag_tables.py` | – |
 
 ---
 
@@ -345,8 +373,15 @@ The anchors' measured residuals enter m and s; that is allowed, because the test
 | KITTI | Depth Pro | 0.139 | 0.840 |
 | DIODE indoor | DA-V2-L / UniDepthV2-L / Depth Pro | 0.220 / 0.171 / 0.204 | – |
 | DIODE outdoor | DA-V2-L / UniDepthV2-L / Depth Pro | 0.74 / 1.11 / 0.52 | – |
+| NYU | Metric3D v2-L | 0.066 | 0.974 |
+| KITTI | Metric3D v2-L | 0.048 | 0.983 |
+| DIODE indoor | Metric3D v2-L | 0.096 | 0.935 |
+| DIODE outdoor | Metric3D v2-L | 0.211 | 0.850 |
+| ETH3D | Metric3D v2-L | 0.135 | 0.832 |
+| ETH3D | UniDepthV2-L | 0.184 | 0.742 |
+| ETH3D | Depth Pro | 0.364 | 0.355 |
 
-UniDepthV2 is much stronger; Depth Pro sits between the two (closer to UniDepthV2 on NYU, behind DA-V2 on KITTI in AbsRel). Our predictions match the official Hugging Face pipeline to three decimals. DA-V2's published NYU numbers (δ1 0.984) come from a model fine-tuned on NYU; the released Hypersim-only metric model has no official zero-shot NYU number, so our δ1 of 0.70 cannot be compared with the authors'. DIODE outdoor is very hard for all three models.
+UniDepthV2 is much stronger than DA-V2; Depth Pro sits between the two (closer to UniDepthV2 on NYU, behind DA-V2 on KITTI in AbsRel). Metric3D v2, which receives the true focal length, is the most accurate model on every dataset. Its NYU and KITTI numbers are close to the zero-shot ViT-L figures that earlier versions of its repository listed (δ1 0.975 and 0.985, AbsRel 0.063 and 0.052), not to the fine-tuned ones it lists now `[VERIFY: that the released checkpoint is the zero-shot model]`. On ETH3D Depth Pro fails on scale: its δ1 is near 0 on several outdoor scenes, where it under-estimates depth by a factor of 2–4 (§9.20). Our predictions match the official Hugging Face pipeline to three decimals. DA-V2's published NYU numbers (δ1 0.984) come from a model fine-tuned on NYU; the released Hypersim-only metric model has no official zero-shot NYU number, so our δ1 of 0.70 cannot be compared with the authors'. DIODE outdoor is very hard for the three models that infer the camera or ignore it (Metric3D v2 reaches δ1 0.85 there).
 
 **E1.** On synthetic images with a controllable global scale error σ_g, K0 and K1 pick nearly the same λ (0.366 vs 0.371 at σ_g = 0.2), and V4 hits its target exactly (0.898–0.900) at every σ_g. Per-image coverage spread grows from 0.006 to 0.195 as σ_g goes from 0 to 0.2, although average coverage stays at 0.90: average validity says nothing about individual images. Run-to-run spread follows the Beta prediction with n = number of images, not pixels.
 
@@ -437,8 +472,8 @@ Calibrating on one dataset and testing on another breaks coverage: KITTI → DIO
 
 ### 9.6 Diagnostics
 
-- **Units:** NYU 464, KITTI 61, DIODE 10 per domain. With ~3 calibration scans per seed, scene-level guarantees are infeasible on DIODE (§7.1).
-- **UniDepth's confidence is not calibrated in absolute terms:** its values (~0.55–0.68) are ~10× the actual log errors (~0.05–0.06), and its correlation with the error changes sign across datasets (+0.14 NYU, −0.24 KITTI, ≈ 0 DIODE indoor). The UniDepthV2 paper trains it to regress the per-pixel log-depth error (the released training code first aligns each prediction to the ground truth by its per-image median, so the target cannot reflect an image's global scale error), but validates only its ranking and reports that calibration degrades on new domains; Deng et al. find it 3–34× under-confident. We therefore use it only inside conformal scores, where calibration supplies the scale.
+- **Units:** NYU 464, KITTI 61, DIODE 10 per domain, ETH3D 13. With ~3 calibration scans per seed on DIODE and 4 scenes on ETH3D, scene-level guarantees are infeasible there at α ≤ 0.1 (§7.1, §9.20).
+- **UniDepth's confidence is not calibrated in absolute terms:** its values (~0.55–0.68) are ~10× the actual log errors (~0.05–0.06), and its correlation with the error changes sign across datasets (+0.14 NYU, −0.24 KITTI, ≈ 0 DIODE indoor). The UniDepthV2 paper trains it to regress the per-pixel log-depth error (the released training code first aligns each prediction to the ground truth by its per-image median, so the target cannot reflect an image's global scale error), but validates only its ranking and reports that calibration degrades on new domains; Deng et al. find it 3–34× under-confident. We therefore use it only inside conformal scores, where calibration supplies the scale. Metric3D v2's confidence behaves differently: positively correlated with the error on all five datasets, though also without an absolute scale (§9.19).
 
 ### 9.7 Cost (E10)
 
@@ -519,7 +554,7 @@ The plain base gives the narrowest mean width; the learned base gives a better i
 
 ![E11 anchor budget, plain log score](../results/figures/e11_anchor_budget__S2-log.png)
 
-*Columns: dataset/model. Rows: image-averaged coverage, per-image coverage SD, share of short images, mean relative width, against k. Grey dotted: no anchors; black dashed: oracle scale. Missing points are infinite intervals (A-local below k = 18; all but A-local on DIODE). The learned-base version is `results/figures/e11_anchor_budget__S5-shape.png`.*
+*Columns: dataset/model (Depth Pro and Metric3D v2 included, §9.14, §9.19). Rows: image-averaged coverage, per-image coverage SD, share of short images, mean relative width, against k. Grey dotted: no anchors; black dashed: oracle scale. Missing points are infinite intervals (A-local below k = 18; all but A-local on DIODE). The learned-base version is `results/figures/e11_anchor_budget__S5-shape.png`.*
 
 **A nuance in the third row.** The short-image share of A-rescale can *rise* slightly from k = 0 to k ≥ 1 on NYU although the SD falls. Without anchors, per-image coverages are spread out: on NYU / DA-V2, 46 % of test images are ≥ 99 % covered and 16 % are below 85 %. Removing the scale error (oracle) pulls them together around 0.90: only 12 % stay ≥ 99 % and 23 % sit just under 85 %. SD measures evenness; the short share measures the per-image guarantee, which only A-local and A-both carry.
 
@@ -546,7 +581,7 @@ Twelve maps (NYU and KITTI × DA-V2 and UniDepth × the worst, 25th-percentile a
 
 ### 9.14 A third model: Depth Pro
 
-Depth Pro (Bochkovskii et al., ICLR 2025) was added after review on all four datasets, through the same pipeline (main study 20 seeds, E5 10 seeds, E11 on NYU and KITTI with 5 seeds × 6 draws). It was run with its own field-of-view estimate, so the focal length, and with it the metric scale, is inferred from each image. **Every main-study finding holds for it.**
+Depth Pro (Bochkovskii et al., ICLR 2025) was added after review on the four original datasets (ETH3D followed, §9.20), through the same pipeline (main study 20 seeds, E5 10 seeds, E11 on NYU and KITTI with 5 seeds × 6 draws). It was run with its own field-of-view estimate, so the focal length, and with it the metric scale, is inferred from each image. **Every main-study finding holds for it.**
 
 - **Validity.** K1 at α = 0.1 covers 0.894 (NYU, about 1.3 SE short), 0.909 (KITTI), 0.909 (DIODE indoor) and 0.884 (DIODE outdoor, 10 scans). On KITTI the seed-to-seed SD is 0.046, against 0.015–0.027 for the other two models.
 - **Raw uncertainty is miscalibrated:** flip disagreement covers 8–24 % at a nominal 90 %; the learned variance head 85–88 %.
@@ -653,30 +688,153 @@ The interval score (width plus a penalty for misses) falls by up to 51 % and ris
 
 **Recipe.** From about 10 anchors per image, use A-dist-auto instead of A-hybrid: the same average guarantee, coverage that does not depend on distance to the nearest anchor, and narrower intervals unless the anchors are clustered. If a per-image guarantee is needed and the anchors are not random, spend 20 of them at random and use A-dist-both.
 
+### 9.18 Calibration versus deployment layout, and LSCP (E15, 3 seeds × 2 draws)
+
+Job 44276 (§6.9 for the design; T12 for @mix and @max). Plain log score and α = 0.1 unless stated. Coverage is image-averaged; "mean" is over the six NYU/KITTI × model pairs, and "lowest pair" is the worst single pair.
+
+![E15: coverage by calibration and test layout, and the width cost of @max](../results/figures/e15_layouts__k50.png)
+
+*Left three panels: coverage of each method calibrated under the layout of the row and tested under the layout of the column (k = 50, mean over the six pairs; bold = matched; blue over-covers, red under-covers the 0.90 target). Right: median width of @max divided by the matched calibration's, per test layout (bar = median over pairs, whiskers = min–max).*
+
+**Finding 1 – matched calibration keeps its guarantee.** On the diagonal, coverage is 0.914–0.921 (lowest pair 0.89) at α = 0.1 and 0.971–0.976 at α = 0.05, for all three methods, every layout and every k. KITTI over-covers as before (about 0.94, and 0.99 at α = 0.05) because it has about 21 calibration drives (§7.1).
+
+**Finding 2 – a mismatched layout breaks the guarantee, in either direction.** Worst mismatched calibration per method:
+
+| Method | Worst calibration → test layout | Mean coverage | Lowest pair | Settings < 0.88 | Settings > 0.92 | Median distance from 0.90 |
+|---|---|---|---|---|---|---|
+| A-rescale | uniform → cluster | 0.852 | 0.82 | 17 % / 21 % | 50 % / 51 % | 2.6 / 3.3 points |
+| A-hybrid | edges → cluster (k = 20) | 0.774 | 0.71 | 35 % / 27 % | 50 % / 51 % | 4.6 / 5.3 points |
+| A-dist | near → edges (k = 200) | 0.863 | 0.81 | 13 % / 26 % | 42 % / 51 % | 2.1 / 3.5 points |
+
+The last three columns cover all mismatched settings (calibration layout ≠ test layout, every k): the first figure is after averaging over the six pairs (60 settings per method), the second per pair (360). For A-rescale and A-hybrid the direction follows the layout's difficulty: clustered anchors estimate the image's shift and spread worst, so any other calibration layout under-covers clustered test images (A-hybrid 0.77–0.87), and calibrating under clustered anchors over-covers every other layout (0.93–0.98). A-dist, which already models distance to the anchors, is closest to the target after averaging over pairs, but per pair it misses by about as much as A-rescale; only A-hybrid is clearly worse. A-dist's largest failures are with edge anchors at test (0.86–0.89 when calibrated under uniform, row, cluster or near-only anchors with k ≥ 50) and with near-only calibration (0.89–0.91 on uniform and row test anchors). At α = 0.05 A-hybrid falls to 0.908 (lowest pair 0.83), while A-rescale and A-dist stay at or above 0.95 on average (lowest pair 0.91).
+
+**Finding 3 – calibrating on a mixture is not enough.** @mix averages to 0.915–0.922 over the five test layouts, as T12 predicts, but not for each one: A-hybrid@mix covers 0.845–0.853 on clustered test anchors (lowest pair 0.81), A-rescale@mix 0.883–0.887, and A-dist@mix 0.902–0.911 on edge anchors (lowest pair about 0.87). A-hybrid@mix on clustered test anchors is also 29 % narrower than the matched calibration: too narrow, not cheaper.
+
+**Finding 4 – the largest threshold is valid under every layout; the cost is width.** @max covers 0.915–0.954 (A-rescale), 0.916–0.979 (A-hybrid) and 0.941–0.973 (A-dist) on average over pairs, at every test layout and k; the lowest pair is 0.89, 0.89 and 0.91, the same as or above the matched calibrations' lowest pair. At α = 0.05 every mean is at least 0.973 and every pair at least 0.95. For A-rescale and A-hybrid the largest threshold is almost always the clustered layout's (@max and @cluster give the same median width in 96 % and 100 % of pair × k × test settings), so @max is effectively @cluster. Median width at k = 50 (median over pairs):
+
+| Test layout | A-rescale@max / matched | A-hybrid@max / matched | A-dist@max / matched | A-dist@max / A-hybrid@max | A-dist@max / matched A-hybrid |
+|---|---|---|---|---|---|
+| uniform | 1.40 | 1.76 | 1.50 | 0.53 | 0.95 |
+| rows | 1.34 | 1.68 | 1.44 | 0.58 | 1.03 |
+| cluster | 1.00 | 1.00 | 1.59 | 1.62 | 1.62 |
+| edges | 1.24 | 1.79 | 1.19 | 0.66 | 1.18 |
+| near | 1.15 | 1.32 | 1.20 | 0.71 | 0.96 |
+
+Across k = 20–200, A-dist@max is 15–52 % narrower than A-hybrid@max under uniform, row, edge and near-only test anchors, and 1.4–2.0× wider under clustered ones; it is 0.82–1.20× the width of A-hybrid calibrated on the matched layout outside the clustered case. In words: when the deployed layout is unknown but among the five, A-dist@max costs about what A-hybrid needed when the layout was known, except for clustered anchors. We have not isolated why A-dist@max is wide under clustered anchors; most of a clustered image lies in the far bins, whose maximum is set by layouts in which those bins are sparse. The width cost grows with k and at α = 0.05: the widest case is A-dist@max on clustered anchors at k = 200, α = 0.05, 2.8× the matched width.
+
+**Finding 5 – @max keeps A-dist flatter across distance than A-hybrid, but not as flat as matched.** The spread of coverage across distance bins (largest minus smallest, median over pairs) is 0.006–0.015 for matched A-dist, 0.023–0.059 for A-dist@max, 0.027–0.093 for A-hybrid@max and 0.039–0.119 for A-rescale@max: taking each bin's largest threshold over-covers the bins where another layout set it. The lowest bin is 0.81 for A-dist@max, against 0.74 matched; all A-dist bins below 0.88 (3 under @max, 5 matched) are KITTI far bins holding 0.03–0.11 % of the test pixels, the caveat of §9.17. A-hybrid@max reaches 0.65–0.74 in the far bins under uniform and row test anchors.
+
+**Finding 6 – LSCP covers only with many random anchors.** Image-averaged coverage (range over pairs):
+
+| Test layout | k = 20 | k = 50 | k = 200 | Images below 0.85 (mean over pairs, k = 20 / 50 / 200) |
+|---|---|---|---|---|
+| uniform | 0.822–0.834 | 0.879–0.892 | 0.917–0.930 | 63 % / 12 % / 0 % |
+| rows | 0.782–0.798 | 0.818–0.827 | 0.755–0.775 | 76 % / 60 % / 89 % |
+| cluster | 0.171–0.248 | 0.196–0.283 | 0.227–0.326 | 100 % |
+| edges | 0.778–0.891 | 0.823–0.926 | 0.826–0.935 | 24–36 % |
+| near | 0.610–0.650 | 0.574–0.649 | 0.514–0.594 | 92–99 % |
+
+With 200 random anchors LSCP reaches the target and is the narrowest method that does: 0.92–0.93 coverage, no images below 0.85, and 8–34 % narrower than matched A-dist (range over pairs). That is the regime its asymptotic guarantee describes (a densely and evenly sampled field). With 20 random anchors it under-covers (0.82–0.83). Under clustered, near-only and scan-line anchors it fails much as A-local does (§9.16), and for the same reason: it learns the residual distribution from anchor neighbourhoods that do not resemble those of the pixels being predicted. Edge anchors, which spread over the whole image, hurt it least (0.78–0.94). Under scan lines more anchors make it worse (0.82 at k = 50, 0.76 at k = 200), likely because an anchor's nearest neighbours lie on its own scan line while an off-line pixel's do not. At α = 0.05 it covers 0.87–0.96 under uniform and 0.20–0.39 under clustered anchors. Its widths under clustered (0.05–0.11× matched A-dist's) and near-only anchors (0.16–0.41×) are the narrow intervals of a method that does not know it is wrong.
+
+**Finding 7 – A-local and the hulls without a budget split.** A-local reproduces E13: 0.908–0.911 under uniform anchors at k = 20 (theory 0.909) and 0.901–0.902 at k = 200 (theory 0.901), 0.87–0.90 with scan lines, 0.92–0.97 with edges, 0.71–0.80 with near-only anchors and 0.26–0.46 with clusters (96–99 % of images below 0.85); at α = 0.05 and k = 20 its intervals are infinite (k_c = 10 < 19). A-dist-both@max covers 0.95–0.99 with few images below 0.85 on average over pairs (≤ 0.2 % uniform, ≤ 0.8 % rows and edges, 1.6–4.8 % near-only, 2.5–8.8 % clustered), but its per-image guarantee comes from A-local and therefore holds only for uniform test anchors; under the other layouts, the budget split of §6.8 is still needed. Against A-both@max it is 28–39 % narrower with uniform anchors, 24–29 % with scan lines, between 11 % narrower and 1 % wider with edges, between 21 % narrower and 6 % wider with near-only anchors, and 39–104 % wider with clusters.
+
+**Recipe.** Calibrate under the anchor layout used at deployment. If that layout is uncertain but one of a known set, calibrate under each and keep the largest threshold (@max); a random mixture of layouts at calibration does not protect any one layout. Prefer A-dist@max unless clustered anchors are among the candidates and expected to be common. Use LSCP only with many random anchors per image, and do not read its intervals as carrying a finite-sample guarantee.
+
+### 9.19 A fourth model: Metric3D v2
+
+Metric3D v2 (ViT-Large; Hu et al., TPAMI 2024) was added on all five datasets through the same pipeline: main study with 20 seeds, E5 with 10 seeds, and E11 on NYU and KITTI with 5 seeds × 6 draws (job 44471). Unlike the other three models it does not infer the camera: it predicts depth for a canonical camera and rescales it by the focal length we pass in, which is the dataset's calibrated value. A deployment with a calibrated camera has the same information, but the comparison with the other models is not like for like. **The main-study findings hold for it as well; it differs in three ways: its confidence map is useful, it is far more robust to the shifts of E5, and it gains least from anchors.**
+
+- **Validity.** K1 at α = 0.1 covers 0.899 (NYU), 0.905 (KITTI), 0.905 (DIODE indoor), 0.891 (DIODE outdoor) and 0.906 (ETH3D), and 0.948–0.957 at α = 0.05 and 0.784–0.837 at α = 0.2, all within two standard errors. The seed-to-seed SD on KITTI is 0.011, the lowest of the four models (0.015–0.046).
+- **Raw uncertainty is miscalibrated:** flip disagreement covers 14–27 % at a nominal 90 %; the learned variance head 78–88 %.
+- **Its confidence is a useful score.** Best K1 score per dataset, with the paired improvement in relative interval score over the plain log score (S2-log/K1; all significant):
+
+| Dataset | Best score | Improvement | S4c-conf (confidence) | Other significant winners |
+|---|---|---|---|---|
+| NYU | S4c-conf | −0.058 | −0.058 | S6-conf, S5, S6, flip (all small) |
+| KITTI | S5-learned | −0.076 | −0.069 | S6, S6-conf, flip |
+| DIODE indoor | S4c-conf | −0.090 | −0.090 | S6-conf, flip, relative |
+| DIODE outdoor | S4c-conf | −0.728 | −0.728 | S6-conf (−0.704), S6, S5, flip, relative |
+| ETH3D | S1-rel | −0.081 | −0.024 | – |
+
+  The winners are the same at α = 0.05 and 0.2. The confidence score improves on the plain log score on all five datasets; UniDepthV2's helps only marginally on NYU and not on ETH3D (+0.003). The diagnostic agrees: the Spearman correlation between 1 − confidence and the absolute log error is positive everywhere, 0.26 (NYU), 0.33 (KITTI), 0.29 (DIODE indoor), 0.62 (DIODE outdoor) and 0.22 (ETH3D), and positive within images too (median per-image correlation 0.14–0.53), where UniDepthV2's changes sign between datasets (§9.6). It has no absolute scale either: the median absolute log error is 1.3–5.5× the median value of 1 − confidence, so, as for UniDepthV2, it is usable only inside a conformal score.
+- **Stricter guarantees cost width** (S2-log, α = 0.1, relative to K1): V4 ×1.36–1.98, RCPS ×1.28–1.33 (infinite on DIODE and ETH3D), K2 ×3.1 (ETH3D) to ×105 (DIODE outdoor).
+- **Depth Mondrian** closes most depth-bin gaps. Worst depth-bin shortfall, S2-log/K1 → S2-log/K3-depth: KITTI 0.264 → 0.036 (3.6 % narrower), DIODE outdoor 0.217 → 0.107 (+60 % width), DIODE indoor 0.151 → 0.082, NYU 0.140 → 0.117 (K3-edge: 0.093). The learned score alone leaves gaps of 0.006–0.050. On DIODE indoor a few seeds put a very large threshold on a sparse bin (mean width ×14.5, median +1 %).
+- **Scene level.** On KITTI V4 meets its target (0.902) and V4-scene over-covers (0.942, +12.5 % width), as for the other models. On NYU V4 is short (0.885, SD 0.019) and V4-scene reaches 0.898, within one standard error of the target but below the 0.907–0.908 of the other three models.
+- **Mirrors** are covered 0.49 under S2-log/K1 (K3-depth 0.51, V4-scene 0.58), against 0.90 on windows; the other models give 0.41–0.62. The true focal length does not help here.
+- **Shift (E5): much smaller losses.** Coverage of K1 calibrated on the source and tested on the target, with recalibration on the target in brackets:
+
+| Score | NYU → DIODE indoor | KITTI → DIODE outdoor |
+|---|---|---|
+| S2-log | 0.851 (0.914) | 0.726 (0.894) |
+| S3-flip | 0.869 | 0.793 |
+| S4c-conf | **0.937** | 0.853 |
+| S5-learned | 0.931 | **0.914** |
+| S6-fact / S6-fact-conf | 0.930 / 0.931 | 0.903 / 0.832 |
+
+  With the plain log score, the other models fall to 0.48–0.77 (NYU → DIODE indoor) and 0.33–0.43 (KITTI → DIODE outdoor) under the same shift. Recalibrating restores 0.89–0.92. The guarantee still does not transfer (0.73 with the plain log score on KITTI → DIODE outdoor), and the learned scores that keep coverage under shift do so by widening: on KITTI → DIODE outdoor, S5's median width is 0.168 at the source and 0.391 at the target. A plausible reading, not tested here, is that a known focal length removes the camera-dependent part of the scale error, which is what changes most between datasets.
+- **Anchors (E11): the smallest gain, because there is less scale error to remove.**
+
+| Pair | Width, no anchors | A-hybrid, k = 20 | Oracle scale | Short images: none → A-both k = 20 | Scale share of per-image variation |
+|---|---|---|---|---|---|
+| NYU, Metric3D | 0.268 | 0.166 (1.6×) | 0.162 | 19.1 % → 0.07 % | 0.55 |
+| KITTI, Metric3D | 0.260 | 0.230 (1.13×) | 0.227 | 9.9 % → 0 % | 0.47 |
+
+  The last column is the share of the image-to-image variation in coverage explained by each image's global scale error (§9.10, Finding 1): 0.47–0.55 for Metric3D v2, against 0.63–0.79 for the other three models. On KITTI its median absolute scale error is 0.021 (log units), against 0.038–0.109 for the others; on NYU it equals UniDepthV2's (0.038). Twenty anchors again reach the oracle, so the gain is small only because the oracle itself is close to the no-anchor width. A-both still removes short images (coverage 0.947 / 0.958, width 0.319 / 0.332, over-estimates 2.9 % / 1.9 % on NYU / KITTI), the learned base again gives a better interval score (0.395 vs 0.420 on NYU, 0.380 vs 0.412 on KITTI), and A-local matches T8 exactly (0.909 / 0.923 / 0.901 at k = 20 / 50 / 200).
+
+![E5: KITTI to DIODE outdoor, Metric3D v2](../results/figures/e5_shift__kitti_to_diode_outdoor__metric3d-large.png)
+
+*Image-averaged coverage per calibrator, averaged over all scores (per-score values are in the table above). K1-scene is infinite after recalibration (5 target scans), hence 1.0. The E11 anchor-budget figure (§9.12) now includes Metric3D v2 on NYU and KITTI.*
+
+### 9.20 A fifth dataset: ETH3D
+
+ETH3D (Schöps et al., CVPR 2017) adds 13 indoor and outdoor scenes with laser-scanned depth (§5). It was run with UniDepthV2, Depth Pro and Metric3D v2 through the main study (20 seeds, job 44471); DA-V2 was not run, because its separate indoor and outdoor models would need a per-scene choice. Each split calibrates on 4 scenes and tests on 6 others, so ETH3D is the smallest and most varied set of units in the study: what it tests is what happens when the unit is the scene and there are very few of them.
+
+S2-log, α = 0.1 (coverage is image-averaged; seed SD in brackets; "below 0.80" is the share of test images covered less than 0.80):
+
+| Model | AbsRel / δ1 | K1 coverage | Scene-averaged | Per-image SD | Below 0.80 | Median width | Best valid K1 score |
+|---|---|---|---|---|---|---|---|
+| Metric3D v2 | 0.135 / 0.832 | 0.906 (0.075) | 0.903 | 0.186 | 14 % | 0.548 | S1-rel (−0.081) |
+| UniDepthV2 | 0.184 / 0.742 | 0.899 (0.066) | 0.873 | 0.240 | 12 % | 0.676 | S1-rel (−0.107) |
+| Depth Pro | 0.364 / 0.355 | **0.690** (0.206) | 0.753 | 0.360 | 34 % | 1.768 | none valid |
+
+**Finding 1 – image-level calibration fails when the scale error depends on the scene.** For Depth Pro, K1 covers 0.690 on average over seeds, about 4.5 standard errors below the target; 15 of 20 seeds are below 0.80 and the worst is 0.38. The same holds at α = 0.05 (0.752) and α = 0.2 (0.616), for V4 (0.716 coverage; 0.68 of images meet the image event, target 0.90), for K3-depth, and for every finite score (validity 0.69–0.78). The cause is a scale bias that changes from scene to scene: the median per-image log(true / predicted depth) ranges from −0.13 (terrains) to +1.35 (facade, 76 images), that is, Depth Pro under-estimates outdoor depth by up to 4×, and its δ1 is near 0 on facade, meadow and terrace. A threshold learned on 4 scenes does not transfer to 6 others, and the failure is one-sided: a split whose calibration scenes are the hard ones covers the test scenes at most fully, while a split with easy calibration scenes leaves a hard test scene mostly uncovered. T1 does not promise otherwise: it needs calibration and test images to be exchangeable, and with a scene split they are not; T2, which holds with scenes as units, is the guarantee that applies, and it needs more calibration scenes (Finding 2). Metric3D v2 and UniDepthV2 have smaller scene biases (−0.25 to +0.02 and −0.30 to +0.20) and K1 holds on average (0.906, 0.899), but a single split is far less reliable than on NYU or KITTI: the seed SD is 0.07–0.08, against 0.011–0.05 there, and single seeds range from 0.74 to 0.99. UniDepthV2's scene-averaged coverage is short (0.873).
+
+**Finding 2 – the valid guarantee is uninformative with 4 calibration scenes.** K1-scene, V4-scene and K2-scene need at least 9 calibration scenes at α = 0.1 and 19 at α = 0.05 (T2), so they return infinite intervals, as does RCPS. At α = 0.2 the condition is met exactly ((4 + 1) × 0.2 = 1), and the threshold becomes the largest calibration residual: with the plain log score K1-scene covers 1.000 (Metric3D v2, UniDepthV2) and 0.967 (Depth Pro, lowest seed 0.83) of each image, with intervals a median 209, 19 and 13 times as wide as the predicted depth. That is the theory working as stated, not a useful interval; Depth Pro's shortfall on single seeds shows that even the largest residual of 4 scenes cannot anticipate a worse test scene, and the guarantee holds only on average over splits. (This boundary case exposed a floating-point error in the exact CRC solver, which returned a near-zero threshold on 10–18 of 20 seeds, depending on model and score; the solver is fixed and the affected cells recomputed, Appendix A.)
+
+**Finding 3 – sparse depth bins.** K3-depth gives infinite intervals on every Metric3D seed at α = 0.1, because the ≥ 40 m bin has 4–6 calibration images; they affect a median 0.02 % of test pixels, and the median width is unchanged (0.554 vs 0.548). The worst depth-bin gap does not improve (0.066 → 0.084).
+
+**Finding 4 – scores.** With 3 head-train scenes the learned scores do not pay off: S5 and S6 are valid but 0.17–0.38 worse in interval score than the plain log score for Metric3D v2 and UniDepthV2, and for Depth Pro their mean widths reach 15 and 1,217. The relative score wins for both models with a valid baseline. Metric3D v2's confidence is weaker here than on the other datasets (Spearman 0.22, median per-image 0.14) but still a significant improvement (−0.024); UniDepthV2's is uncorrelated with the error (0.007). Raw intervals cover 8–14 % (flip) and 63–82 % (learned variance) at a nominal 90 %.
+
+**What would work.** ETH3D is the regime of §9.10, Finding 4 (DIODE): no cross-image guarantee is both valid and finite, and the only remaining option is within-image calibration from anchors (A-local), which needs no calibration scenes. E11 was not run on ETH3D.
+
+![Width vs validity, ETH3D Depth Pro](../results/figures/main_width_vs_validity__eth3d__depthpro.png)
+
+*As in §9.2: each point is a score/calibrator pair, x = median relative width (log scale), y = coverage of the calibrator's own target notion; dotted line = 90 % target. No finite method reaches the target.*
+
 ---
 
 ## 10. Limitations and threats to validity
 
 1. **Exchangeability is the whole contract.** Every guarantee needs calibration and test units drawn the same way. Under domain shift coverage collapses (E5); only target-domain recalibration or within-image anchors (A-local) restore it.
 2. **Average guarantees say nothing about individual images.** K1, V4, RCPS and Mondrian are statements about a random image (or scene). Per-image guarantees exist here only with anchors, and only in expectation over anchor draws.
-3. **Random anchors are an assumption.** Real sensors give structured anchors (LiDAR scan lines, sparse SLAM points, no returns on glass or sky). A-local's guarantee requires uniformly random anchors among valid pixels; E13 shows it fails, silently, under structured layouts (§9.16), and random anchors can still miss coherent failure regions (§9.13). The cross-image guarantees survive only because calibration images use the same layout; a layout change between calibration and deployment is not covered.
+3. **Random anchors are an assumption.** Real sensors give structured anchors (LiDAR scan lines, sparse SLAM points, no returns on glass or sky). A-local's guarantee requires uniformly random anchors among valid pixels; E13 shows it fails, silently, under structured layouts (§9.16), and random anchors can still miss coherent failure regions (§9.13). The cross-image guarantees survive only because calibration images use the same layout: E15 shows coverage falling as low as 0.77 on average (0.71 on one pair) when they do not (§9.18). Taking the largest threshold over candidate layouts restores validity for each of them, but only for layouts in the candidate set, and at 1.1–2× the width.
 4. **Structured semantic failures.** Mirrors are covered 41–62 % under K1; no score derived from the prediction sees them. Sensor ground truth itself is wrong on some reflective surfaces, so "coverage" there is partly coverage of sensor artefacts.
-5. **Few units on DIODE and KITTI.** DIODE has 10 scans per domain, so scene-level guarantees are infeasible and image-level results there carry high variance. KITTI's ~21 calibration drives make scene-level methods conservative (0.93–0.94) and borderline at α = 0.05.
+5. **Few units on DIODE, ETH3D and KITTI.** DIODE has 10 scans per domain and ETH3D 13 scenes (4 for calibration per split), so scene-level guarantees are infeasible at α ≤ 0.1 and image-level results there carry high variance. On ETH3D the image-level guarantee also fails outright for Depth Pro (0.69 at a 0.90 target, §9.20), so a valid statement there needs more calibration scenes or within-image anchors. KITTI's ~21 calibration drives make scene-level methods conservative (0.93–0.94) and borderline at α = 0.05.
 6. **Ground-truth coverage only.** All coverage is measured on pixels with valid ground truth (sub-sampled on a grid); KITTI LiDAR misses sky and some surfaces.
 7. **The patch guarantee is impractical on very hard data** (DIODE outdoor, §9.4).
 8. **Base-model accuracy check.** The released DA-V2 metric model has no official zero-shot NYU number (the published one is after NYU fine-tuning), so its absolute accuracy here cannot be checked against the authors'; this affects widths, not the validity of any guarantee.
-9. **Three models, four datasets.** Results may differ for other foundation models or sensors; Depth Pro was evaluated with its own field-of-view estimate only.
+9. **Four models, five datasets.** Results may differ for other foundation models or sensors. Depth Pro was evaluated with its own field-of-view estimate only, and Metric3D v2 with the true focal length only, so the comparison between them mixes model quality with camera information; whether Metric3D's smaller scale error and shift robustness survive an estimated focal length is untested. On ETH3D the focal length given to Metric3D v2 is exact only at the image centre (§5), and DA-V2 was not run there. Metric3D v2's training data and checkpoint provenance are taken from its paper and repository `[VERIFY]`.
 10. **The safety query is a proxy.** E12's region is a fixed image window, not a planned path; on NYU it can include floor, so its thresholds mix obstacles with the ground. The decision rule is a single threshold, not a planner.
-11. **A-dist's guarantee is per distance bin, not per pixel or per image.** Sparse bins are merged, decided on calibration pixel positions, and the guarantee then holds for the merged bin; on KITTI the farthest part of a merged bin is under-covered (0.73–0.88 on under 0.4 % of pixels, §9.17). A-dist was compared with A-hybrid and A-local but not yet with LSCP, the closest single-field method. Like every anchor method here, it assumes the anchor layout seen at calibration is the one met at deployment, and E14 does not test a mismatch.
-12. **Reproducibility hygiene.** Result files record `"git": "uncommitted"`; the exact code must be committed and tagged before release (§12).
+11. **A-dist's guarantee is per distance bin, not per pixel or per image.** Sparse bins are merged, decided on calibration pixel positions, and the guarantee then holds for the merged bin; on KITTI the farthest part of a merged bin is under-covered (0.73–0.88 on under 0.4 % of pixels, §9.17). Like every cross-image anchor method here, it assumes the anchor layout seen at calibration is the one met at deployment (Limitation 3); with the largest threshold over layouts its coverage across distance is flatter than A-hybrid's but no longer as flat as with matched calibration (§9.18, Finding 5). LSCP was run with a fixed neighbour count and a β grid rather than the paper's cross-validation (§6.9), so its numbers describe our implementation of it.
+12. **Reproducibility hygiene.** The code is tagged `v1.0-report` (commit `fc48f93`), but the results were produced before the first commit, so their `spec.json` files record `"git": "uncommitted"`. Earlier experiments ran on earlier versions of this code. Later changes mainly added methods and options, and where reruns overlapped, unchanged methods reproduced exactly (Appendix A). That tag also lacks `src/data/` (loaders, protocols, PixelTable, splits): a `data/` pattern in `.gitignore` excluded it, which was fixed on 23 October, so a new tag is needed before anyone can rerun from the repository; result files from such a rerun would record the commit. The ETH3D K1-scene cells at α = 0.2 were recomputed locally after the solver fix (Appendix A) and merged into the cluster results; the originals are kept in `results/fix_k1scene/`.
 
 ---
 
 ## 11. Conclusion and future work
 
-Conformal calibration turns frozen monocular metric depth models into interval predictors with real guarantees, cheaply and without retraining. The data force two design choices: guarantees must treat the image or scene as the unit, and the dominant remaining problem is the spread of coverage across images, driven mostly by one global scale error per image. A few true depth measurements per image address exactly that: they narrow intervals substantially, and with A-both deliver an average and a per-image guarantee together; A-local keeps working where no calibration data exist, provided the anchors are random. Two results from the later experiments qualify how guarantees should be used: a guarantee protects only the quantity it was calibrated on (E12), and a within-image guarantee is only as good as the randomness of the anchors (E13). Both findings held for a third model. Calibrating separately by distance to the nearest anchor (A-dist, E14) removes the fall of coverage with distance under every layout tested and narrows intervals by up to two thirds when the anchors spread over the image; spending 20 anchors at random restores the per-image guarantee alongside it.
+Conformal calibration turns frozen monocular metric depth models into interval predictors with real guarantees, cheaply and without retraining. The data force two design choices: guarantees must treat the image or scene as the unit, and the dominant remaining problem is the spread of coverage across images, driven mostly by one global scale error per image. A few true depth measurements per image address exactly that: they narrow intervals substantially, and with A-both deliver an average and a per-image guarantee together; A-local keeps working where no calibration data exist, provided the anchors are random. Two results from the later experiments qualify how guarantees should be used: a guarantee protects only the quantity it was calibrated on (E12), and a within-image guarantee is only as good as the randomness of the anchors (E13). Both findings held for a third model. Calibrating separately by distance to the nearest anchor (A-dist, E14) removes the fall of coverage with distance under every layout tested and narrows intervals by up to two thirds when the anchors spread over the image; spending 20 anchors at random restores the per-image guarantee alongside it. The anchor rule is part of the guarantee (E15): a mismatched layout at calibration costs up to 13 points of coverage, a mixture of layouts does not protect any single one, and the largest threshold over layouts does, at a width cost that A-dist keeps smallest outside clustered anchors. A fourth model and a fifth dataset sharpen the first design choice. Metric3D v2, given the true focal length, has the least global scale error, holds coverage best under dataset shift and gains least from anchors, consistent with scale error being what anchors remove. On ETH3D, with 13 very different scenes, image-level calibration fails outright for a model whose scale error depends on the scene, while the scene-level guarantee that would hold is infinite or uninformative with 4 calibration scenes: when units are few, cross-image calibration has nothing valid and useful to offer.
 
-**Future work.** (1) Anchors that differ between calibration and deployment: calibrating on a mixture of layouts or taking the largest threshold over layouts, compared with LSCP as a single-field baseline; and noisy or corrupted anchors, where MRAC's robustness is the natural comparison. (2) Anchors under domain shift: calibrate A-hybrid on one dataset and test on another with anchors. (3) Semantics-aware groups (reflective surfaces) for Mondrian calibration, where labels are available at test time. (4) More models and sensors.
+**Future work.** (1) Noisy or corrupted anchors, and real sensor anchors (KITTI single-scan LiDAR) instead of simulated layouts, where MRAC's robustness is the natural comparison; a smaller candidate set for @max, which would cut its width when clustered anchors can be ruled out. (2) Anchors under domain shift: calibrate A-hybrid on one dataset and test on another with anchors. (3) Semantics-aware groups (reflective surfaces) for Mondrian calibration, where labels are available at test time. (4) Anchors on ETH3D (E11), where A-local is the only candidate for a valid and finite interval; Metric3D v2 with an estimated instead of the true focal length, to separate model quality from camera information. (5) More models and sensors.
 
 ---
 
@@ -689,22 +847,25 @@ CV_Project/
 ├── docs/PROJECT_REPORT.md       this document
 ├── src/
 │   ├── config.py                paths via SPACAL_* environment variables
-│   ├── data/                    loaders (NYU, KITTI, DIODE), protocols, cache I/O, PixelTable, splits (exchange_units)
-│   ├── models/                  DA-V2, UniDepthV2 and Depth Pro wrappers (GPU only)
+│   ├── data/                    loaders (NYU, KITTI, DIODE, ETH3D), protocols, cache I/O, PixelTable, splits (exchange_units)
+│   ├── models/                  DA-V2, UniDepthV2, Depth Pro and Metric3D v2 wrappers (GPU only)
 │   ├── scores/                  scale_maps.py (S0–S4c), learned.py (S5, S6), groups.py, raw_baselines.py
 │   ├── calibrators/             crc.py (exact CRC, K1-scene, RCPS), split_cp.py (K0, K2, V4), mondrian.py (K3),
 │   │                            registry.py (one entry point, incl. V4-scene / K2-scene), anchors.py (E11, E13 layouts),
-│   │                            anchor_dist.py (A-dist: local shift and spread, distance bins, bin merging, auto variant)
+│   │                            anchor_dist.py (A-dist: local shift and spread, distance bins, bin merging, auto variant),
+│   │                            lscp.py (LSCP baseline, E15), anchor_noise.py (noisy and LiDAR anchor values, E16)
 │   └── metrics/                 depth_metrics.py (AbsRel, δ1), interval_metrics.py (coverage, width, scores), safety.py (E12)
-├── experiments/                 prepare_tables, e0…e12 (E13 = e11_anchors --pattern; E14 = e11_anchors --pattern --dist-kinds), run_calibration, summarize, make_figures, qualitative, diag_tables
-├── scripts/                     download_data, cache_predictions, run_all_gpu.sh, run_all_cpu.sh, run_e11.sh, run_fixes.sh, run_new.sh
+├── experiments/                 prepare_tables, e0…e12 (E13 = e11_anchors --pattern; E14 = e11_anchors --pattern --dist-kinds), e15_layouts, e16_noisy (not yet run), run_calibration, summarize, make_figures, qualitative, diag_tables
+├── scripts/                     download_data, prepare_eth3d (streams the ETH3D archive, resumable), cache_predictions, add_kitti_lidar, run_all_gpu.sh, run_all_cpu.sh, run_e11.sh, run_fixes.sh, run_new.sh
 ├── slurm/                       env.sh, smoke / cache / cpu / e11 / fixes / new .sbatch files
-├── colab/                       spacal_colab.ipynb, spacal_depthpro_colab.ipynb (GPU caching)
-├── tests/                       62 automated tests (incl. Monte-Carlo checks of each guarantee)
-└── results/                     main/, e1/, e5/, e8/, e11/, e12/, e13/, e14/, figures/, figures_qual/; *_v1 = pre-fix runs
+├── colab/                       spacal_colab.ipynb, spacal_depthpro_colab.ipynb, spacal_metric3d_eth3d_colab.ipynb (GPU caching)
+├── tests/                       automated tests (incl. Monte-Carlo checks of each guarantee); run `pytest`
+└── results/                     main/, e1/, e5/, e8/, e11/, e12/, e13/, e14/, e15/, figures/, figures_qual/; *_v1 = pre-fix runs
 ```
 
-**To reproduce:** cache predictions once on a GPU (`scripts/run_all_gpu.sh` or the Colab notebook), build tables (`experiments/prepare_tables.py`), then run `scripts/run_all_cpu.sh` (main study, E0, E1, E5, E8), `scripts/run_e11.sh` (anchors), `scripts/run_new.sh` (E12, E13, E14, Depth Pro), `python -m experiments.summarize --exp-id main` and `python -m experiments.make_figures`. Qualitative maps need the raw caches (`python -m experiments.qualitative`). Every result directory has a `spec.json` with the exact settings. The full CPU pipeline takes roughly 8–10 hours on 32 cores. Run `pytest` for the test suite.
+**To reproduce:** cache predictions once on a GPU (`scripts/run_all_gpu.sh` or the Colab notebook), build tables (`experiments/prepare_tables.py`), then run `scripts/run_all_cpu.sh` (main study, E0, E1, E5, E8), `scripts/run_e11.sh` (anchors), `scripts/run_new.sh` (E12, E13, Depth Pro; E14 with `PARTS=e14`, E15 with `PARTS=e15`, Metric3D v2 with `PARTS=metric3d`, ETH3D with `PARTS=eth3d`), `python -m experiments.summarize --exp-id main` and `python -m experiments.make_figures`. Qualitative maps need the raw caches (`python -m experiments.qualitative`). Every result directory has a `spec.json` with the exact settings. The full CPU pipeline takes roughly 8–10 hours on 32 cores. Run `pytest` for the test suite.
+
+**Code:** [github.com/sohamkkk/spacal-depth](https://github.com/sohamkkk/spacal-depth) (private for now), tag `v1.0-report` (incomplete: without `src/data/`, Limitation 12).
 
 **Where the data lives:** raw prediction caches and prepared tables on Google Drive (`MyDrive/spacal/`); prepared tables and results on the cluster's scratch storage. The raw result CSVs are not in the repository; the figures are, under `results/figures*/`.
 
@@ -737,6 +898,20 @@ CV_Project/
 - Two changes followed: bins with fewer than 2/α − 1 calibration scenes are merged into their nearer neighbour at calibration time, and A-dist-auto picks the variant per draw by head-train score.
 - Job 44194 (03:58–16:26) is the run reported in §9.17. Every reference method reproduced job 44136 exactly, so only A-dist changed.
 
+**Layout mismatch and LSCP (21–22 Oct).** E15 was added to test the assumption, stated in T7 and T10, that calibration and deployment anchors follow the same rule, together with LSCP as the single-field baseline the §4 review had asked for. Job 44276 (21 Oct 21:15 – 22 Oct 09:22) ran the full grid without errors and is the run reported in §9.18. The figure script gained the E15 coverage matrix (`results/figures/e15_layouts__k50.png`).
+
+**A fourth model and a fifth dataset (22–24 Oct).** Metric3D v2 and ETH3D were cached on a Colab GPU (`colab/spacal_metric3d_eth3d_colab.ipynb`) and run on the cluster. Three problems were fixed on the way:
+
+- Metric3D's torch.hub code imports `mmcv`, which no longer installs cleanly; the wrapper registers a stub for the one function it uses, and the rest falls back to `mmengine`.
+- The first ETH3D loader used the undistorted images, but the depth maps match the distorted originals, so predictions and ground truth were misaligned. The loader now uses the distorted images with the calibration's focal length (§5). The official ETH3D server failed during download, so `scripts/prepare_eth3d.py` streams the same data from a mirror archive (the one used by Marigold's evaluation) with resumable HTTP range requests; a failing download target no longer aborts the others.
+- Reducing ETH3D's sparse depth by sampling one pixel per block lost most laser returns; the lower median of each block's valid values keeps them.
+
+Job 44471 (23 Oct 23:23 – 24 Oct 05:49) ran the main study for the seven new pairs, E5 and E11 for Metric3D, without errors (§9.19, §9.20).
+
+**Solver fix (24 Oct).** Analysing ETH3D showed K1-scene at α = 0.2 with zero-width intervals on most seeds. With 4 calibration scenes the CRC budget (n + 1)α − B is exactly 0, so the only feasible threshold is the largest residual. The exact solver computed the weight above each candidate as the total minus a cumulative sum; over millions of pixels this left rounding noise of order 10⁻¹² instead of 0, no candidate passed, and the search fell back to the smallest residual. It now uses a suffix sum, which is exactly 0 at the largest residual, and a regression test covers n = 4, 9 and 19 at α = 0.2, 0.1 and 0.05. Every result file was scanned for the symptom (intervals of near-zero width). Only two places were affected: the ETH3D K1-scene cells at α = 0.2, recomputed locally for all three models (the already-correct seeds reproduced exactly) and reported in §9.20; and K1-scene in E8 on 17 of its 986 runs (calibration sets of 25–400 images), which E8 does not report (§9.8 uses K1). No other calibrator, dataset or experiment had a calibration with a zero budget.
+
+**Under development (22–24 Oct).** Noisy anchors (E16, `experiments/e16_noisy.py`: Gaussian, outlier and bias corruption of anchor values, and real single-scan KITTI LiDAR anchors added by `scripts/add_kitti_lidar.py`). A 300-image smoke run of E16 on NYU with Depth Pro worked end to end; no E16 result is reported here.
+
 **Figures.** Qualitative maps were rendered on a Colab CPU from the Drive caches and redesigned for clarity (widths in metres on a shared scale, thickened sparse ground truth, anchors drawn, wide layout for KITTI). The figure script gained the anchor-budget figure and a readable width-vs-validity plot.
 
 ---
@@ -760,7 +935,11 @@ CV_Project/
 7. Mossina & Friedrich, arXiv 2503.05618: confirm the title.
 8. Depth Pro reference: confirm the author list (§9.14).
 9. Kandinsky conformal prediction (arXiv 2502.17264): confirm the author list and ICML 2025.
-10. LSCP (Jiang & Xie, arXiv 2412.01098): confirm the title and venue, and that it calibrates within one spatial field as described in §4.
+10. LSCP (Jiang & Xie, arXiv 2412.01098): confirm the title and venue, that it calibrates within one spatial field as described in §4, and that our implementation (§6.9: nearest-neighbour residual features, quantile random forest, per-location β) matches the paper apart from the two stated departures.
+11. Metric3D v2: confirm the reference (Hu et al., TPAMI 2024, arXiv 2404.15506, full author list); that its training data exclude NYU, KITTI, DIODE and ETH3D; that the torch.hub ViT-L checkpoint is the zero-shot model, not one fine-tuned on NYU or KITTI (our numbers match the zero-shot table in earlier versions of its README, §9.1); and what its confidence head is trained on (the wrapper assumes 1 − |relative error|; §9.19 uses only its ranking).
+12. ETH3D zero-shot status for UniDepthV2 and Depth Pro (their papers list it as an evaluation set), and DIODE's focal length of 886.81 px used for Metric3D.
+
+**Resolved on 24 October 2026:** ETH3D's ground-truth depth maps are aligned with the original distorted DSLR images, not the undistorted ones (dataset documentation); the loader uses the distorted images (§5).
 
 ---
 
@@ -785,6 +964,7 @@ CV_Project/
 - Guan, L. Localized conformal prediction: a generalized inference framework for conformal prediction. *Biometrika* 110(1), 2023.
 - Gui, Y., Barber, R. F., Ma, C. Conformalized matrix completion. *NeurIPS* 2023, arXiv 2305.10637.
 - Hornauer, J., Belagiannis, V. Gradient-based Uncertainty for Monocular Depth Estimation. *ECCV* 2022.
+- Hu, M., Yin, W., et al. Metric3D v2: A Versatile Monocular Geometric Foundation Model for Zero-shot Metric Depth and Surface Normal Estimation. *IEEE TPAMI* 2024; arXiv 2404.15506 `[VERIFY: author list]`.
 - Jiang, H., Xie, Y. Spatial conformal inference through localized quantile regression (LSCP). arXiv 2412.01098 `[VERIFY: title, venue]`.
 - Kim & Kim. SCORE: Shape-Conforming Regions for Flight in Enclosed, Degraded Environments. arXiv 2608.15289, 2026.
 - Lee, Y., Barber, R. F., Willett, R. Distribution-free inference with hierarchical data. *ACM Journal of Data Science* 2026; arXiv 2306.06342.
@@ -799,6 +979,7 @@ CV_Project/
 - Noonan, A. The Exceedance Design Effect: Effective Sample Size for Thresholds under Clustering. arXiv 2608.21262, 2026.
 - Piccinelli, L., et al. UniDepthV2: Universal Monocular Metric Depth Estimation Made Simpler. arXiv 2502.20110, 2025.
 - Roy, S., et al. The Multipath Blind Spot: K-Agnostic Robust Calibration for Sparse-Anchor Metric Depth from Frozen Foundations (MRAC). arXiv 2607.04101, 2026.
+- Schöps, T., Schönberger, J. L., Galliani, S., Sattler, T., Schindler, K., Pollefeys, M., Geiger, A. A Multi-View Stereo Benchmark with High-Resolution Images and Multi-Camera Videos. *CVPR* 2017.
 - Sen & Saha. Conformal Prediction for Spatially Dependent Data via Sequential Whitening. arXiv 2610.10168, 2026.
 - Shin, Ra & Yang. From Prediction Uncertainty to Conformalized Distance Fields for Safe Motion Planning. arXiv 2607.00776, 2026.
 - Silberman, N., Hoiem, D., Kohli, P., Fergus, R. Indoor Segmentation and Support Inference from RGBD Images. *ECCV* 2012.
@@ -821,6 +1002,7 @@ CV_Project/
 | **A-dist (-auto, -split, -both)** | distance-aware anchor calibration (§6.8): local shift and spread, one threshold per distance bin; -auto chooses the variant on head-train; -split runs on a budget-split draw; -both is its hull with A-local on the 20 random anchors |
 | **Anchor** | a pixel whose true depth is known at test time (e.g. a LiDAR return) |
 | **Anchor layout** | how anchor pixels are chosen: uniformly at random, or structured (rows, cluster, edges, near) |
+| **@layout, @mix, @max** | in E15, the calibration anchors: under one named layout; under a random layout per image; or the largest threshold over the five single-layout calibrations (valid for each layout) |
 | **Budget split** | placing k − 20 anchors by the layout and 20 uniformly at random, so A-local keeps its per-image guarantee |
 | **Calibration set** | held-out labelled data used only to set λ |
 | **Conformal prediction** | recipe giving intervals with guaranteed coverage under exchangeability |
@@ -835,6 +1017,7 @@ CV_Project/
 | **Hull (of intervals)** | the smallest interval containing both: [min of lowers, max of uppers] |
 | **Interval score** | width plus a penalty proportional to how far the truth falls outside; lower is better |
 | **λ (lambda)** | the calibrated multiplier that sets interval width |
+| **LSCP** | the spatial conformal method of Jiang & Xie: quantile regression of a location's residual on its neighbours' residuals within one spatial field; here run inside each image, from its anchors |
 | **Marginal vs conditional** | holds on average over images vs holds for each image (or group) |
 | **Metric depth** | depth in real units (metres) |
 | **Mondrian** | conformal calibration done separately within groups |

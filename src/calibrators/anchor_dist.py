@@ -160,11 +160,12 @@ def _fit_g(r0, delta, n_q=20):
 
 
 def fit_dist_model(head, d_h, b_h, draw_h, cfg, alpha, half_a, use_g=True, single_bin=False,
-                   min_pixels=10, fields=None, cap_q=0.999) -> tuple[DistModel, float]:
+                   min_pixels=10, fields=None, cap_q=0.999, d_obs=None) -> tuple[DistModel, float]:
     """tau (by log interval score: lambda on half A of head-train, score on half B), then g, bin merges and
     the scale cap (cap_q quantile of the head scale; None = no cap).
+    d_obs: anchor values when they differ from the true residuals d_h (noisy anchors); default d_h.
     Returns the model and its head score (lower is better; used to choose bandwidths)."""
-    f = fields if fields is not None else anchor_fields(head, d_h, draw_h, cfg)
+    f = fields if fields is not None else anchor_fields(head, d_h if d_obs is None else d_obs, draw_h, cfg)
     img = head.image_of_pixel()
     ev = draw_h.eval
     fill = float(np.nanmedian(f.sigma[ev]))

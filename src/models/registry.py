@@ -1,4 +1,5 @@
-"""Model factory. Tags: dav2-{indoor,outdoor}-{small,base,large}, unidepthv2-{small,large}, depthpro."""
+"""Model factory. Tags: dav2-{indoor,outdoor}-{small,base,large}, unidepthv2-{small,large}, depthpro,
+metric3d-{small,large,giant2}."""
 
 
 def build_model(tag: str, device: str | None = None):
@@ -15,4 +16,8 @@ def build_model(tag: str, device: str | None = None):
         from src.models.depth_pro import DepthProModel
 
         return DepthProModel(device=device)
+    if parts[0] == "metric3d" and len(parts) == 2:
+        from src.models.metric3d import Metric3DModel
+
+        return Metric3DModel(size=parts[1], device=device)
     raise ValueError(f"unknown model tag {tag!r}")

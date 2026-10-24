@@ -24,13 +24,14 @@ src/
   models/            DA-V2, UniDepthV2 and Depth Pro wrappers (GPU only)
   scores/            scale maps S0–S4c, learned S5/S6, groups, raw baselines
   calibrators/       exact CRC, K1/K1-scene, RCPS, split CP, Mondrian, registry,
-                     anchors.py (A-rescale, A-hybrid, A-local, A-both, layouts), anchor_dist.py (A-dist)
+                     anchors.py (A-rescale, A-hybrid, A-local, A-both, layouts), anchor_dist.py (A-dist),
+                     lscp.py (LSCP baseline)
   metrics/           depth metrics, interval metrics, safety queries
 experiments/         prepare_tables, e0–e12, run_calibration, summarize, make_figures, qualitative
 scripts/             data download, prediction caching, run_all_gpu.sh, run_all_cpu.sh, run_e11.sh, run_new.sh
 slurm/               sbatch files for a Slurm cluster
 colab/               notebooks for GPU caching on Colab
-tests/               62 tests, incl. Monte-Carlo checks of each guarantee
+tests/               66 tests, incl. Monte-Carlo checks of each guarantee
 results/figures*/    all figures in the report
 ```
 
@@ -45,7 +46,7 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt     # CPU only: every calibration experiment, tests, figures
 ```
 
-Model inference (caching predictions) needs a GPU and the full stack: `bash scripts/setup_remote.sh` installs torch (CUDA 12.8 wheels), `requirements.txt` and UniDepth. Depth Pro needs `transformers >= 4.49`. On Colab, use the notebooks in `colab/` with `requirements-colab.txt`.
+Model inference (caching predictions) needs a GPU and the full stack: `bash scripts/setup_remote.sh` installs torch (CUDA 12.8 wheels), `requirements.txt` and UniDepth. Depth Pro needs `transformers >= 4.49`. Metric3D v2 comes through torch.hub and needs `mmengine` (or `mmcv`); fetch it on a node with internet with `TORCH_HOME=$PWD/.torch_cache python -m scripts.prefetch_models --only-metric3d`. On Colab, use the notebooks in `colab/` with `requirements-colab.txt`.
 
 ## Pipeline
 
@@ -65,7 +66,11 @@ GPUS="0" bash scripts/smoke_remote.sh         # 3 images per pair, E0 table, tes
 GPUS="0 1 2 3" bash scripts/run_all_gpu.sh    # cache predictions, one dataset per GPU (resumable)
 bash scripts/run_all_cpu.sh                   # tables, main study, E0, E1, E5, E8, summaries, figures
 bash scripts/run_e11.sh                       # anchors (E11)
-bash scripts/run_new.sh                       # E12, E13, E14 and the Depth Pro pairs
+bash scripts/run_new.sh                       # E12, E13 and the Depth Pro pairs
+PARTS="e14 e15" bash scripts/run_new.sh       # A-dist, calibration vs test layout, LSCP
+python -m scripts.add_kitti_lidar --zip data/kitti/data_depth_velodyne.zip   # raw-scan anchors for E16
+PARTS=e16 bash scripts/run_new.sh             # noisy and real-LiDAR anchors
+PARTS="metric3d eth3d" bash scripts/run_new.sh   # fourth model, fifth dataset (after caching them)
 python -m experiments.make_figures
 ```
 
@@ -95,6 +100,7 @@ Calibrators with k anchors per test image (`src/calibrators/anchors.py`, `anchor
 | A-both | hull of A-hybrid and A-local: both |
 | A-dist(-auto) | average over scenes within each distance-to-nearest-anchor bin |
 | A-dist-both | k − 20 anchors by layout + 20 at random; hull with A-local on the random 20: both |
+| LSCP (baseline) | Jiang & Xie's localized spatial conformal prediction within each image: asymptotic only |
 
 ## Experiments
 
@@ -110,6 +116,7 @@ Calibrators with k anchors per test image (`src/calibrators/anchors.py`, `anchor
 | E12 | `experiments/e12_safety.py` | nearest depth in a forward region and per lane |
 | E13 | `experiments/e11_anchors.py --exp-id e13 --pattern {rows,cluster,edges,near}` | structured anchor layouts |
 | E14 | `experiments/e11_anchors.py --exp-id e14 --pattern ... --dist-kinds median knn kernel bilateral` | distance-aware anchors and the budget split |
+| E15 | `experiments/e15_layouts.py --pattern ...` | calibration anchors under a different layout than test anchors (each layout, a mixture, the largest threshold over layouts); LSCP baseline |
 
 ## Tests
 

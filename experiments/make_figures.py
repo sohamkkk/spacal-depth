@@ -137,8 +137,9 @@ def fig_e5():
         save(fig, f"e5_shift__{name}")
 
 
-E11_ORDER = ("nyu__unidepthv2-large", "nyu__dav2-indoor-large", "nyu__depthpro", "kitti__unidepthv2-large",
-             "kitti__dav2-outdoor-large", "kitti__depthpro", "diode_indoor__dav2-indoor-large",
+E11_ORDER = ("nyu__unidepthv2-large", "nyu__dav2-indoor-large", "nyu__depthpro", "nyu__metric3d-large",
+             "kitti__unidepthv2-large", "kitti__dav2-outdoor-large", "kitti__depthpro", "kitti__metric3d-large",
+             "diode_indoor__dav2-indoor-large",
              "diode_outdoor__dav2-outdoor-large")
 E11_METHODS = (("A-rescale", "tab:blue", "o"), ("A-hybrid", "tab:orange", "s"),
                ("A-local", "tab:green", "^"), ("A-both", "tab:red", "D"))
@@ -279,6 +280,68 @@ def fig_e14(base="S2-log", alpha=0.1, k_bins=50):
     save(fig, f"e14_distance__{base}")
 
 
+E15_METHODS = ("A-rescale", "A-hybrid", "A-dist")
+E15_CAL = (*E14_LAYOUTS, "mix", "max")
+
+
+def fig_e15(alpha=0.1, k=50):
+    """Calibration vs test anchor layout: coverage of each method calibrated under each layout (rows) and tested
+    under each layout (columns), mean over dataset/model pairs; last panel the width cost of @max over matched."""
+    summ = []
+    for p in glob.glob(str(RESULTS_ROOT / "e15" / "*" / "summary.csv")):
+        ds, model, test = p.split("/")[-2].split("__")
+        summ.append(pd.read_csv(p).assign(pair=f"{ds}__{model}", test=test))
+    if not summ:
+        return
+    s = pd.concat(summ, ignore_index=True)
+    s = s[np.isclose(s.alpha, alpha) & (s.k.astype(str) == str(k))]
+    s["fam"], s["cal"] = s.method.str.split("@").str[0], s.method.str.split("@").str[1]
+    tests = [t for t in E14_LAYOUTS if t in set(s.test)]
+    fig, axes = plt.subplots(1, 6, figsize=(14, 3.4),
+                             gridspec_kw={"width_ratios": [1, 1, 1, 0.05, 0.12, 1.3], "wspace": 0.3})
+    axes[4].axis("off")
+    for ax, fam in zip(axes, E15_METHODS):
+        m = (s[s.fam == fam].pivot_table(index="cal", columns="test", values="cov_image_mean", aggfunc="mean")
+             .reindex(index=list(E15_CAL), columns=tests))
+        im = ax.imshow(m.values, cmap="RdBu", vmin=1 - alpha - 0.12, vmax=1 - alpha + 0.12, aspect="auto")
+        for i in range(m.shape[0]):
+            for j in range(m.shape[1]):
+                v = m.values[i, j]
+                if np.isfinite(v):
+                    bold = "bold" if E15_CAL[i] == tests[j] else "normal"
+                    ax.text(j, i, f"{v:.2f}", ha="center", va="center", fontsize=6.5, weight=bold)
+        ax.axhline(len(E14_LAYOUTS) - 0.5, color="k", lw=0.8)
+        ax.set_xticks(range(len(tests)), tests, rotation=35, fontsize=7)
+        ax.set_yticks(range(len(E15_CAL)), E15_CAL if ax is axes[0] else [], fontsize=7)
+        ax.set_xlabel("test layout", fontsize=8)
+        ax.set_title(fam, fontsize=9)
+    axes[0].set_ylabel("calibration layout", fontsize=8)
+    cb = fig.colorbar(im, cax=axes[3])
+    cb.set_label(f"image-avg coverage (target {1 - alpha:.2f})", fontsize=7)
+    cb.ax.tick_params(labelsize=6)
+
+    ax = axes[5]
+    key = ["pair", "test"]
+    width = 0.8 / len(E15_METHODS)
+    for i, (fam, color) in enumerate(zip(E15_METHODS, ("tab:gray", "tab:blue", "tab:purple"))):
+        matched = s[(s.fam == fam) & (s.cal == s.test)].set_index(key).median_rel_width
+        mx = s[(s.fam == fam) & (s.cal == "max")].set_index(key).median_rel_width
+        r = (mx / matched).groupby("test").agg(["median", "min", "max"]).reindex(tests)
+        x = np.arange(len(tests)) + (i - 1) * width
+        ax.bar(x, r["median"], width, color=color, label=fam)
+        ax.errorbar(x, r["median"], yerr=[r["median"] - r["min"], r["max"] - r["median"]], fmt="none",
+                    ecolor="k", lw=0.6, capsize=1.5)
+    ax.axhline(1, color="k", lw=0.6)
+    ax.set_xticks(range(len(tests)), tests, rotation=35, fontsize=7)
+    ax.set_xlabel("test layout", fontsize=8)
+    ax.set_ylabel("@max / matched median width", fontsize=8)
+    ax.set_title("cost of covering every layout", fontsize=9)
+    ax.legend(fontsize=7, frameon=False)
+    ax.grid(alpha=0.25, lw=0.5, axis="y")
+    ax.tick_params(labelsize=7)
+    save(fig, f"e15_layouts__k{k}")
+
+
 def main():
     global OUT
     OUT = results_dir("figures")
@@ -290,6 +353,7 @@ def main():
     fig_e11(base="S5-shape")
     fig_e14()
     fig_e14(base="S5-shape")
+    fig_e15()
     print(f"figures in {OUT}")
 
 

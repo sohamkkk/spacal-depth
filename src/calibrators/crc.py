@@ -63,9 +63,10 @@ def _min_lambda_under_budget(r: np.ndarray, w: np.ndarray, budget: float) -> flo
         return 0.0
     order = np.argsort(r, kind="stable")
     rs, ws = r[order], w[order]
-    # weight strictly above rs[k]: total minus everything <= rs[k] (ties included)
+    # weight strictly above rs[k] (ties included) as a suffix sum, so it is exactly 0
+    # at the maximum; total - cumsum leaves rounding noise that breaks a zero budget
     last_of_tie = np.searchsorted(rs, rs, side="right") - 1
-    above = ws.sum() - np.cumsum(ws)[last_of_tie]
+    above = np.append(np.cumsum(ws[::-1])[::-1][1:], 0.0)[last_of_tie]
     k = np.argmax(above <= budget + 1e-12)
     return float(rs[k])
 
