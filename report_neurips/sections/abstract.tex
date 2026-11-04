@@ -1,0 +1,16 @@
+\begin{abstract}
+Monocular metric depth foundation models predict a distance in metres at every pixel of a single image, but they do not say reliably how wrong each prediction may be.
+This project attaches per-pixel depth intervals with finite-sample coverage guarantees to such models without retraining them, using conformal prediction.
+The work has two parts.
+The first is a broad study over four frozen models (Depth Anything V2, UniDepthV2, Depth Pro, Metric3D v2) and five datasets (NYU Depth v2, KITTI, DIODE, ETH3D, ARKitScenes).
+It shows that the image or the scene, not the pixel, is the exchangeable unit.
+Most per-image miscoverage comes from one global scale error per image, and a few sparse metric depth measurements (\emph{anchors}) remove most of it, giving intervals 1.1--3.7$\times$ narrower.
+However, when the anchors follow a realistic sensor layout (scan lines, one cluster, only near surfaces) and are reused for calibration inside the image, the per-image guarantee fails silently: under clustered anchors, coverage falls to \NumLocalClusterCovLo--\NumLocalClusterCovHi{} at a 0.9 target.
+The second part, the main contribution, separates the two roles of the measurements.
+Structured anchors build the prediction, and a few uniformly random \emph{probes}, never seen by the predictor, set one conformal threshold per image (\mDual).
+This gives a per-image coverage guarantee for any anchor layout and any probe-independent centre, with a known Beta law for its spread across images, and it needs no calibration images.
+On NYU and KITTI it reaches its theoretical coverage in every layout.
+On ARKitScenes, with iPad LiDAR checked against laser scans, it runs unchanged on a depth-completion network.
+That network is the better centre under uniform anchors, while the frozen model with our anchor-built centre is better under clustered anchors.
+The probes certify what they measure: laser probes certify the depth, while iPad probes certify only the iPad reading.
+\end{abstract}

@@ -1,0 +1,69 @@
+\section{Problem Statement}
+\label{sec:problem}
+
+\paragraph{Prediction and residuals.}
+An image $x$ has a finite set $\cP$ of pixels with valid ground-truth depth $y(p)>0$.
+A frozen monocular metric model $f$ predicts $\yhat(p)=f(x)(p)$; nothing is retrained.
+We work with the log-depth residual
+\begin{equation}
+d(p)=\log y(p)-\log\yhat(p),
+\label{eq:residual}
+\end{equation}
+so an interval that is symmetric in $d$ is multiplicative in depth: $C(p)=[\yhat(p)e^{m(p)-w(p)},\,\yhat(p)e^{m(p)+w(p)}]$ for a centre shift $m$ and a half-width $w$.
+
+\paragraph{A primer on conformal prediction.}
+Let $R=\mathcal{R}(x,y)$ be a nonconformity score, \eg $|d|/s$ for a scale map $s$, computed on $N$ calibration units and on one test unit.
+If the $N+1$ scores are exchangeable (their joint law is invariant under permutations; i.i.d.\ is a special case), the test score is equally likely to take any rank among them.
+Hence the $\lceil(N+1)(1-\alpha)\rceil$-th smallest calibration score $\qhat$ satisfies $\P(R_{\text{test}}\le\qhat)\ge1-\alpha$.
+The interval $\{y:\mathcal{R}(x,y)\le\qhat\}$ therefore covers the truth with probability at least $1-\alpha$, for any model and any data distribution.
+This is \emph{split conformal prediction}; its only assumption is exchangeability.
+For dense outputs, conformal risk control~\cite{angelopoulos2024crc} chooses $\qhat$ so that the expected value of a bounded loss, such as the fraction of a new image's pixels left uncovered, is at most $\alpha$.
+
+\paragraph{Why pixels are not the unit.}
+If a model misjudges the size of a room by 20\%, every pixel in that image is wrong together.
+Pixels of one image are therefore far from independent, and treating them as exchangeable calibration points gives no valid statement.
+The exchangeable unit is the \emph{image}, or the \emph{scene} (room, drive, visit) when several images share one.
+A guarantee built this way holds \emph{on average over images}.
+Individual images can still be covered anywhere from 40\% to 100\%, because each image has its own scale error.
+
+\paragraph{Sparse metric measurements.}
+A sensor returns $k$ measurements per image.
+At a measured pixel it reports a depth $\ytil(p)$ and a residual $\dtil(p)=\log\ytil(p)-\log\yhat(p)$.
+For a perfect sensor $\dtil=d$; for a real one $\dtil(p)=d(p)+e(p)$ with a sensor error $e$.
+The positions follow a \emph{layout}, a random rule that may depend on $x$ and $\yhat$ but never on $y$.
+We use five: \emph{uniform} (a uniform sample of $\cP$), \emph{rows} (pixels on four random image rows, a few-beam scanner), \emph{cluster} (the $k$ pixels nearest one random centre, a single observed patch), \emph{edges} (uniform among edge pixels of $\yhat$, like feature points) and \emph{near} (uniform among the 30\% of pixels with the smallest $\yhat$, a range-limited sensor).
+In the main method, $k-n$ measurements follow the layout and form the \emph{structured anchor} set $\cS$.
+The remaining $n$ form the \emph{probe} set $\cQ$, drawn uniformly without replacement from $\cU=\cP\setminus\cS$.
+Intervals are evaluated on $\cE=\cU\setminus\cQ$.
+For a pixel $p$, $\delta(p)$ is its distance to the nearest measurement, divided by the image diagonal.
+Random probes need a sensor that can be read at random pixels: a dense or semi-dense sensor subsampled in software (phone LiDAR, time-of-flight or structured-light cameras), or a steerable scanner~\cite{pittaluga2020mems,bergman2020adaptivelidar}.
+
+\paragraph{Coverage targets.}
+A method outputs $C(p)=[\ell(p),u(p)]$ at every evaluation pixel.
+The coverage of image $i$ is
+\begin{equation}
+\Cov_i=\frac{1}{|\cE_i|}\sum_{p\in\cE_i}\1\{y(p)\in C(p)\}.
+\label{eq:cov}
+\end{equation}
+At level $1-\alpha$ we distinguish the following targets:
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+\item \emph{Marginal (image or scene):} $\E[\Cov_i]\ge1-\alpha$ over images (or scenes), measurements and calibration data.
+\item \emph{Image event:} with probability at least $1-\alpha$, a new image has at least a fraction $1-\beta$ of its pixels covered.
+\item \emph{Per-image:} $\E[\Cov_i\mid x_i,\cS_i]\ge1-\alpha$ for \emph{every} image, with only the probes random.
+No image is then always under-covered.
+\item \emph{Per distance bin:} for bins of $\delta$ (edges $0.02,0.05,0.1,0.2$), the expected coverage of the pixels of a new scene in each bin is at least $1-\alpha$, so far pixels are not traded for near ones.
+\end{itemize}
+Every guarantee concerns the values used to calibrate: sensor readings certify the readings, not the depth.
+We always \emph{evaluate} against independent ground truth $y$.
+
+\paragraph{Efficiency.}
+Among valid methods we prefer narrower intervals.
+We report the median relative width $(u-\ell)/\yhat$ and the interval score $(u-\ell)+\frac{2}{\alpha}[(\ell-y)_++(y-u)_+]$, which also penalizes misses by their size.
+The \emph{relative interval score} (IS) divides the interval score by $y$, averages over the pixels of an image, and takes the median over images.
+It keeps the miss penalty while staying robust to a few extreme images.
+
+\paragraph{Research questions.}
+(Q1)~Which unit makes conformal guarantees for dense depth valid, and what do they cost?
+(Q2)~How much do sparse metric anchors help, and do their guarantees survive realistic layouts, layout mismatch and sensor noise?
+(Q3)~Can a per-image guarantee be kept for \emph{any} layout and any centre, and what does the sensor budget buy?
+(Q4)~Which centre should be calibrated, and what exactly is certified when the measurements come from a real, imperfect sensor?

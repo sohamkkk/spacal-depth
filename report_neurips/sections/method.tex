@@ -1,0 +1,183 @@
+\section{Proposed Method}
+\label{sec:method}
+
+The method grew in three stages, each answering a failure of the previous one.
+\Cref{sec:method:wrapper} wraps a frozen model in cross-image conformal calibration (broad study).
+\Cref{sec:method:anchors} adds sparse test-time anchors and a distance-aware model of their information (broad study).
+\Cref{sec:method:dual} presents the main method, which separates the anchors' two roles.
+\Cref{tab:notions} in \cref{app:notions} summarizes which method gives which guarantee.
+
+\subsection{A conformal wrapper for frozen depth models}
+\label{sec:method:wrapper}
+All intervals have the form $\yhat\,e^{\pm\lambda s(x)}$ (shifted by $m$ where anchors are available), with a \emph{scale map} $s$ that encodes how difficult each pixel is, and a threshold $\lambda$ set by calibration.
+
+\paragraph{Scale maps and calibrators.}
+We compare nine scale maps: constant error in metres, error proportional to $\yhat$, constant relative error (the \emph{plain log score}, $s\equiv1$), flip disagreement, ensemble spread, gradient-based uncertainty~\cite{hornauer2022gradient}, the model's own confidence map, a \emph{learned} score (gradient-boosted trees fitted on held-out \emph{head-train} images), and a \emph{factorised} score $a(\text{image})\times b(\text{pixel})$ that separates ``how wrong is this image'' from ``where in it''.
+With images as units, the calibrators (\cref{tab:calibrators} in \cref{app:broad}) are: K1, conformal risk control on the fraction of an image's pixels left uncovered (marginal coverage over images); RCPS~\cite{bates2021rcps}, its high-probability version; V4, split conformal on each image's $(1-\beta)$-quantile of scores (the image event); K2, every pixel of a fixed patch covered at once; K3, Mondrian per predicted-depth bin or for edge versus smooth pixels; and K0, a naive baseline that treats pixels as exchangeable.
+Scene-level versions (K1-scene, V4-scene, K2-scene) weight scenes equally and are valid when scenes, not images, are exchangeable; they need at least $1/\alpha-1$ calibration scenes.
+
+\subsection{Sparse test-time anchors}
+\label{sec:method:anchors}
+Each test image comes with $k$ anchors, and calibration images receive anchors by the same rule.
+In the broad study all $k$ measurements play both roles.
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+\item \mRescale shifts the prediction by the median anchor residual, $m=\med_{p\in\cA}\dtil(p)$, then calibrates across scenes (K1-scene). It gives a marginal guarantee.
+\item \mHybrid additionally divides each pixel's score by the image's anchor-estimated spread (leave-one-out median absolute deviation plus a floor $\tau$ from head-train). It gives a marginal guarantee.
+\item \mLocal calibrates inside the image only: half of the anchors fix the shift, the other half set the width by split conformal~\cite{mao2024spatial}.
+If the anchors are a uniform sample of pixels, it gives a per-image guarantee with exact value $r/(k/2+1)$, $r=\lceil(k/2+1)(1-\alpha)\rceil$, and no calibration set is needed.
+It is infinite for $k<18$ at $\alpha=0.1$.
+\item \mBoth is the pointwise hull of \mHybrid and \mLocal; since both statements are monotone in the interval, it inherits both guarantees~\cite{gasparin2024merging}.
+\end{itemize}
+
+\paragraph{Distance-aware anchors (\mDist).}
+Under structured layouts, coverage depends strongly on the distance to the nearest anchor (\cref{sec:res:broad}).
+\mDist models this.
+The local shift $m(p)$ is one of four estimates from the anchor residuals: the image median, the median of the 16 nearest anchors, or a Gaussian or bilateral (also weighting similarity in $\log\yhat$) kernel mean.
+The local spread $\sigma(p)$ is the median absolute deviation of the 16 nearest anchor residuals, and the scale is
+\begin{equation}
+s(p)=\big(\sigma(p)+\tau\big)\,g\big(\delta(p)\big),
+\label{eq:scale}
+\end{equation}
+with a floor $\tau$ and a non-decreasing $g$ fitted by isotonic regression of normalized error against distance.
+The variant and bandwidths are chosen per layout on head-train images (``auto''), never on calibration or test data.
+One threshold per bin of $\delta$ is then set by CRC over calibration scenes, with the miscovered fraction of bin pixels as loss.
+This is a Mondrian construction: the expected bin miscoverage of a new scene is at most $\alpha$ in every bin, and sparse bins are merged.
+In the main method this calibrated version is called \mDistSplit, and the same anchor model supplies the centre of \mDual.
+
+\paragraph{Layout mismatch.}
+Cross-image calibration is valid only if calibration and test anchors follow the same layout.
+If the deployed layout is one of a known set, calibrating under each and keeping the largest threshold (``@max'') is valid for each of them: for every layout, the @max threshold is at least that layout's own valid threshold.
+A random mixture of layouts at calibration time is valid only on average over that mixture.
+
+\subsection{Main method: dual-role anchors (\mDual)}
+\label{sec:method:dual}
+
+\input{../paper/figures/pipeline}
+
+\paragraph{Architecture (\cref{fig:pipeline}).}
+(1)~A frozen monocular model produces $\yhat$.
+(2)~The sensor budget is split into $k-n$ anchors $\cS$ that follow the deployed layout and $n$ uniformly random probes $\cQ$.
+(3)~The anchors alone build a local centre $m(p)$ and scale $s(p)$ around $\yhat$ with the \mDist model of \cref{eq:scale}, fitted on $\cS$ only.
+(4)~The probes, unseen by stages 1--3, set one conformal threshold per image.
+Stage~1 can be any predictor that does not see the probes, \eg a depth-completion network fed RGB and $\cS$; stage~3 is then refit around its output.
+\mDual is therefore a calibration layer, not a depth estimator.
+
+\paragraph{Scale shrinkage.}
+When the anchors set the shift wrong everywhere, as a single cluster can, the residual is nearly flat.
+The threshold is then set by the probes with the smallest $s$, and widths elsewhere grow by up to $\max s/\min s$.
+We therefore shrink the scale toward its per-image median $M_i=\med_{p\in\cP_i}s(p)$:
+\begin{equation}
+s_\gamma(p)=M_i\big(s(p)/M_i\big)^{\gamma},\qquad\gamma=0.5.
+\label{eq:shrink}
+\end{equation}
+
+\paragraph{Per-image threshold.}
+For probes $\cQ=\{p_1,\dots,p_n\}$ with reported residuals $\dtil(p_j)$,
+\begin{equation}
+R_j=\frac{|\dtil(p_j)-m(p_j)|}{s_\gamma(p_j)},\qquad\qhat_i=R_{(r)},\qquad r=\lceil(n+1)(1-\alpha)\rceil,
+\label{eq:threshold}
+\end{equation}
+where $R_{(r)}$ is the $r$-th smallest score ($\qhat_i=\infty$ if $r>n$).
+The interval at every evaluation pixel is
+\begin{equation}
+C(p)=\Big[\yhat(p)\,e^{\,m(p)-\qhat_i s_\gamma(p)},\;\yhat(p)\,e^{\,m(p)+\qhat_i s_\gamma(p)}\Big].
+\label{eq:interval}
+\end{equation}
+
+\begin{theorem}[Dual-role validity]
+\label{thm:dual}
+Fix an image with valid pixels $\cP$ and a structured anchor set $\cS\subset\cP$ chosen by any rule, which may depend on $x$, $\yhat$ and the anchor values.
+Let $m$, $s>0$ and $\gamma$ be determined by $(x,\yhat,\cS,\dtil|_\cS)$.
+Let $v$ be the log residual of the quantity the probes report ($v=d$ for exact depth, $v=\dtil$ for a sensor).
+Draw $\cQ$ uniformly without replacement from $\cU=\cP\setminus\cS$, compute $\qhat$ by \cref{eq:threshold} with $v$, and let $J$ be uniform on $\cU\setminus\cQ$.
+Then
+\begin{equation*}
+\P\big(\yhat(J)e^{v(J)}\in C(J)\,\big|\,x,\cS,\dtil|_\cS\big)\;\ge\;\frac{r}{n+1}\;\ge\;1-\alpha,
+\end{equation*}
+with equality on the left when the scores have no ties and $r\le n$.
+Equivalently, $\E[\Cov_i\mid x,\cS]\ge r/(n+1)$, the expectation being over the probe draw.
+\end{theorem}
+
+\noindent\emph{Proof idea.}
+Given the anchors, every pixel of $\cU$ carries a fixed score.
+The probes together with $J$ form a uniformly random $(n+1)$-subset of $\cU$, so $J$'s score is among the $r$ smallest of the $n+1$ scores, and hence covered, with probability at least $r/(n+1)$.
+The full proof is in \cref{app:proof-dual}. \hfill$\square$
+
+The theorem needs no calibration images and uses all $n$ probes for the threshold; $n\ge9$ suffices at $\alpha=0.1$.
+By contrast, \mLocalSplit, which applies \mLocal to the $n$ probes, spends half of them on a shift.
+\emph{Scope:} the guarantee holds in expectation over the probe draw, not per region.
+Probes must be uniform over the pixels it concerns.
+Every choice, $\gamma$ included, must be fixed without looking at probe values.
+And it covers $v$, the quantity the probes measure.
+
+\paragraph{Probe budget.}
+\Cref{thm:dual} fixes the mean of $\Cov_i$; the number of probes fixes its spread.
+
+\begin{proposition}[Per-image coverage law]
+\label{prop:budget}
+Under \cref{thm:dual} with no ties and $r\le n$, let $N=|\cU|$.
+The number of covered evaluation pixels, $(N-n)\Cov_i$, follows exactly the beta-binomial law $\BetaBin(N-n,\,r,\,n+1-r)$.
+As $N\to\infty$, $\Cov_i\to\BetaD(r,\,n+1-r)$ in distribution.
+\end{proposition}
+
+This is the finite-population form of the Beta law of split-conformal coverage conditional on the calibration set~\cite{vovk2012conditional}; the proof is in \cref{app:proof-budget}.
+It turns the probe count into a design parameter (\cref{tab:budget}).
+The share of images below coverage $c$ in one draw, $\P(\BetaD(r,n{+}1{-}r)<c)$, is known before any data are seen.
+At $\alpha=0.1$ it falls slowly with $n$ (\NumRuleShortHundred\% below 0.85 at $n=100$).
+The nominal level is the stronger lever: $r=n=20$ (the \mDualRmax arm, nominal \NumRuleNomTwentyAll) leaves only \NumRuleShortTwentyAll\% of images below 0.85, at a width cost the confirmatory run measures (\pending{measured, $r=n$ arm}).
+
+\begin{table}[t]
+\centering\small
+\caption{\textbf{Probe budget at $\alpha=0.1$, one probe draw}, from the Beta law of \cref{prop:budget} alone (no data).}
+\label{tab:budget}
+\begin{tabular}{@{}rrccc@{}}
+\toprule
+$n$ & $r$ & $r/(n+1)$ & 10th percentile of $\Cov_i$ & $\P(\Cov_i<0.85)$, \% \\
+\midrule
+10 & 10 & 0.909 & \NumBetaPTenTen   & \NumBetaShortOneTen \\
+20 & 19 & 0.905 & \NumBetaPTenTwenty & \NumBetaShortOneTwenty \\
+40 & 37 & 0.902 & \NumBetaPTenForty & \NumBetaShortOneForty \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{A per-distance-bin guarantee (\mDualBoth).}
+\mDual's coverage, in practice, decreases with the distance to the nearest anchor; \cref{thm:dual} allows this because it is an average over the image.
+\mDistSplit (\cref{sec:method:anchors}, fitted on all $k$ measurements) has the opposite profile: a per-bin guarantee averaged over scenes, no per-image guarantee, and a need for calibration scenes with dense depth from the same source as the measurements.
+\mDualBoth is the pointwise hull
+$C^{\text{both}}(p)=\big[\min(\ell^{\text{dual}},\ell^{\text{dist}}),\,\max(u^{\text{dual}},u^{\text{dist}})\big]$.
+
+\begin{theorem}[Hull validity]
+\label{thm:both}
+\mDualBoth has the per-image guarantee of \cref{thm:dual} and the per-bin guarantee of \mDistSplit.
+\end{theorem}
+
+\noindent\emph{Proof idea.} The hull contains each interval pointwise and both statements are monotone in the interval~\cite{gasparin2024merging} (\cref{app:proof-both}). \hfill$\square$
+
+\noindent The broad study's \mDistBoth, the hull of \mDistSplit with \mLocalSplit, is the baseline that \mDualBoth replaces.
+Any hull costs width, most when its two centres disagree, as under clustered anchors.
+
+\subsection{Sensor-error envelope}
+\label{sec:env}
+With sensor-valued probes, \cref{thm:dual} certifies the reading $\ytil$, not the depth $y$.
+Let $e=\log\ytil-\log y$ and suppose a reference (here a laser scan) exists on calibration scenes.
+We (a)~subtract a global bias $\hat\beta$, the median of $e$ on head-train pixels, from the probe values.
+We (b)~give each sensor-confidence class $c$ (ARKit: $0,1,2$) the band $[-a_c,b_c]=[Q_c(\lambda/2),Q_c(1-\lambda/2)]$ of the corrected head-train error, clipped to contain 0.
+One conformal risk control over the $U$ calibration scenes sets $\hat\lambda$: the largest value on a fixed grid with $\frac{U}{U+1}\hat L(\lambda)+\frac{1}{U+1}\le\alpha_e$, where $\hat L$ is the mean fraction of a scene's pixels outside their band.
+With $[\ell,u]$ the \mDual interval for the corrected reading at level $1-\alpha_s$, the enveloped interval (\mDualEnv) is
+\begin{equation}
+C^{\text{env}}(p)=\big[\ell(p)\,e^{-b_{c(p)}},\;u(p)\,e^{a_{c(p)}}\big].
+\label{eq:envelope}
+\end{equation}
+
+\begin{proposition}[Envelope]
+\label{prop:env}
+If the sensor reading and its confidence are defined at every evaluation pixel, the miscoverage of $y$ by $C^{\text{env}}$, averaged over test scenes and probe draws, is at most $\alpha_s+\alpha_e$.
+\end{proposition}
+
+\noindent\emph{Proof idea.} $y$ can be missed only if the corrected reading falls outside $[\ell,u]$ (at most $\alpha_s$ per image, \cref{thm:dual}) or the corrected error falls outside its band (at most $\alpha_e$ in expectation, by risk control); a union bound concludes (\cref{app:proof-env}). \hfill$\square$
+
+\noindent The per-image guarantee on $y$ is not retained, since the envelope part holds on average over scenes.
+We fixed $\alpha_s=\alpha_e=0.05$ before the run.
+One risk control over a single class-adaptive parameter replaces per-class thresholds, which would all be infinite with 37 calibration scenes (\cref{app:proof-env}); this design was amended before any envelope output existed.
+

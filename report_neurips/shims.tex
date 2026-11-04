@@ -1,0 +1,10 @@
+%% Minimal shims for ../paper/macros.tex, which assumes the packages and helpers that cvpr.sty provides.
+\usepackage{xspace}
+\usepackage[shortlabels,inline]{enumitem}
+\makeatletter
+\DeclareRobustCommand\onedot{\futurelet\@let@token\@onedot}
+\def\@onedot{\ifx\@let@token.\else.\null\fi\xspace}
+\providecommand{\eg}{\emph{e.g}\onedot}
+\providecommand{\ie}{\emph{i.e}\onedot}
+\providecommand{\etal}{\emph{et al}\onedot}
+\makeatother

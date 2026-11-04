@@ -1,0 +1,14 @@
+%% Report-only macros, loaded after ../paper/numbers.tex.
+
+%% Per-cell E19 lookup. ../paper/numbers.tex (author's hand part, L167) wraps every E19 cell in \prelim, although
+%% only OMNI-DC completed from iPad anchors is exploratory; E19c (laser anchors, ten splits) is confirmatory.
+%% Exploratory (centre, anchor source) pairs are listed as e19x/... below.
+\renewcommand{\ENineteen}[6]{\ifcsname e19/#1/#2/#3/#4/#5/#6\endcsname\ifcsname e19x/#2/#3\endcsname\prelim{\csname e19/#1/#2/#3/#4/#5/#6\endcsname}\else\csname e19/#1/#2/#3/#4/#5/#6\endcsname\fi\else\pending{?}\fi}
+\expandafter\def\csname e19x/omnidc/lidar\endcsname{}
+
+%% Broad-study method names (E11-E16).
+\newcommand{\mRescale}{\textsf{A-rescale}\xspace}
+\newcommand{\mHybrid}{\textsf{A-hybrid}\xspace}
+\newcommand{\mBoth}{\textsf{A-both}\xspace}
+\newcommand{\mDist}{\textsf{A-dist}\xspace}
+\newcommand{\mDualRmax}{\textsf{A-dual-rmax}\xspace}

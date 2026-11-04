@@ -1,0 +1,306 @@
+\section{Proofs}
+\label{app:proofs}
+
+\subsection{Proof of \cref{thm:dual} (dual-role validity)}
+\label{app:proof-dual}
+
+\paragraph{Setting.}
+Fix an image $x$ with its finite set $\cP$ of valid pixels, its prediction $\yhat$, a structured anchor set $\cS\subset\cP$ and the values $\dtil|_\cS$ reported at $\cS$.
+Everything below is conditional on $(x,\yhat,\cS,\dtil|_\cS)$; since the statement holds for every realization, it also holds after averaging over any randomness in the layout.
+By assumption, the centre $m$, the scale $s>0$, the per-image median $M=\med_{p\in\cP}s(p)$, and hence $s_\gamma=M(s/M)^\gamma$, are functions of $(x,\yhat,\cS,\dtil|_\cS)$, with $\gamma$ a fixed constant.
+They are therefore fixed functions on $\cU=\cP\setminus\cS$.
+Let $v:\cU\to\mathbb{R}$ be the log residual of the quantity the probes report.
+Every $p\in\cU$ then carries a fixed score $R(p)=|v(p)-m(p)|/s_\gamma(p)$.
+Let $N=|\cU|\ge n+1$ and $r=\lceil(n+1)(1-\alpha)\rceil$.
+
+\paragraph{Coverage event.}
+Since $s_\gamma>0$ and $\exp$ is increasing, $\yhat(p)e^{v(p)}\in C(p)$ if and only if $m(p)-\qhat s_\gamma(p)\le v(p)\le m(p)+\qhat s_\gamma(p)$, \ie if and only if $R(p)\le\qhat$.
+For $v=d$, $\yhat e^{d}=y$, so this is coverage of the true depth.
+
+\paragraph{Exchangeability.}
+Let $(Z_1,\dots,Z_{n+1})$ be a uniformly random ordered sample without replacement from $\cU$, and set $\cQ=\{Z_1,\dots,Z_n\}$ and $J=Z_{n+1}$.
+Then $\cQ$ is a uniform $n$-subset of $\cU$ and, given $\cQ$, $J$ is uniform on $\cU\setminus\cQ$, exactly as in the theorem.
+The law of $(Z_1,\dots,Z_{n+1})$ is invariant under permutations and $R$ is a fixed function, so $(R(Z_1),\dots,R(Z_{n+1}))$ is exchangeable.
+
+\paragraph{Rank argument.}
+If $r>n$, $\qhat=\infty$ and coverage is 1.
+Otherwise, break ties among the $n+1$ scores uniformly at random and let $\rho$ be the resulting rank of $R(Z_{n+1})$, which is uniform on $\{1,\dots,n+1\}$ by exchangeability.
+If $\rho\le r$, at most $r-1$ of the $n$ probe scores are ranked below $R(Z_{n+1})$, so the $r$-th smallest probe score satisfies $\qhat\ge R(Z_{n+1})$.
+Hence $\P(R(J)\le\qhat)\ge\P(\rho\le r)=r/(n+1)\ge1-\alpha$.
+Without ties, $R(J)\le\qhat$ holds if and only if $\rho\le r$, so equality holds.
+
+\paragraph{From one pixel to image coverage.}
+Given $\cQ$, $J$ is uniform on $\cE=\cU\setminus\cQ$, so $\P(R(J)\le\qhat\mid\cQ)=\Cov_i$ (with $y$ replaced by $\yhat e^{v}$).
+Taking expectations over $\cQ$ gives $\E[\Cov_i\mid x,\yhat,\cS,\dtil|_\cS]\ge r/(n+1)$. \hfill$\square$
+
+\paragraph{Remarks.}
+(a)~No assumption is made on how $\cS$ was chosen, on the distribution of images, or on $m$ and $s$ beyond their independence of the probe values.
+This is why any layout and any probe-independent centre (\eg a completion network fed RGB and $\cS$) are allowed.
+(b)~If any quantity used in $m$, $s$ or $\gamma$ were selected after looking at the probe values of the same image, $R$ would no longer be a fixed function and the argument would fail.
+(c)~The probes must be uniform over the pixels the guarantee concerns; if a sensor cannot return at some pixels, $\cU$ and the guarantee are restricted to the pixels where it returns.
+(d)~This is the split-conformal argument for a fitting set and a calibration set inside one instance~\cite{gui2023cmc}, and the within-field exchangeability argument~\cite{mao2024spatial}, specialized to a frozen prior and a structured fitting set.
+
+\subsection{Proof of \cref{prop:budget} (per-image coverage law)}
+\label{app:proof-budget}
+Assume no ties among $\{R(p)\}_{p\in\cU}$ and $r\le n$.
+Sort $\cU$ by score and let $T$ be the position of the $r$-th smallest probe, so $\qhat$ is the $T$-th smallest score in $\cU$.
+Exactly $T-r$ non-probe pixels have score $\le\qhat$, so $(N-n)\Cov_i=T-r$.
+For $T=r+j$, the sample must contain $r-1$ of the first $r+j-1$ pixels, the pixel at position $r+j$, and $n-r$ of the last $N-r-j$ pixels:
+\begin{equation*}
+\P(T-r=j)=\binom{r+j-1}{r-1}\binom{N-r-j}{n-r}\Big/\binom{N}{n},\qquad j=0,\dots,N-n.
+\end{equation*}
+This negative-hypergeometric law equals $\BetaBin(N-n,\,r,\,n+1-r)$, a standard identity (\eg via the P\'olya urn), which we also checked numerically to $10^{-14}$ for $N=300$, $n=20$.
+Its mean is $(N-n)\,r/(n+1)$, so $\E[\Cov_i]=r/(n+1)$, the equality case of \cref{thm:dual}.
+A beta-binomial variable is a binomial mixture with success probability $B\sim\BetaD(r,n+1-r)$.
+Dividing by $N-n$ and letting $N\to\infty$ with $n$ fixed gives $\Cov_i\to B$ in distribution, the classical conditional-coverage law of split conformal prediction~\cite{vovk2012conditional}. \hfill$\square$
+
+\noindent\emph{Numbers.} For $n=20$ ($r=19$): $\E[\Cov_i]=19/21=\NumDualCovTheory$, the 10th percentile is \NumBetaPTenTwenty, and $\P(\Cov_i<0.85)=\NumBetaShortOneTwenty\%$ for one draw.
+With a few thousand evaluation pixels per image the finite-population correction is negligible at this precision.
+
+\subsection{Proof of \cref{thm:both} (hull validity)}
+\label{app:proof-both}
+\paragraph{The per-bin guarantee of \mDistSplit.}
+Let scenes be the exchangeable units.
+The $U$ calibration scenes and one test scene are exchangeable, every image in them receives measurements by the same anchor rule, and all hyper-parameters of $m$ and $s$ are fitted on separate head-train scenes.
+For a distance bin $b$ and threshold $\lambda$, let $L_{u,b}(\lambda)\in[0,1]$ be the average over the images of scene $u$ of the fraction of their bin-$b$ evaluation pixels with $|d-m|/s>\lambda$; it is non-increasing in $\lambda$.
+Conformal risk control~\cite{angelopoulos2024crc} with $\hat\lambda_b=\inf\{\lambda:\frac{U_b}{U_b+1}\hat L_b(\lambda)+\frac{1}{U_b+1}\le\alpha\}$ gives $\E[L_{\text{test},b}(\hat\lambda_b)]\le\alpha$ for every bin (the Mondrian argument~\cite{vovk2005alrw}).
+Bins supported by fewer than $2/\alpha-1$ calibration scenes are merged with the nearer neighbour, by a rule that depends on pixel positions only; the guarantee then holds for the merged bin.
+
+\paragraph{Hull.}
+For every evaluation pixel, $C^{\text{both}}(p)\supseteq C^{\text{dual}}(p)$ and $C^{\text{both}}(p)\supseteq C^{\text{dist}}(p)$.
+So the hull's coverage indicator is at least the maximum of the two coverage indicators, pointwise.
+Averaging over an image and taking the expectation over the probes gives \cref{thm:dual}'s bound.
+Averaging over bin $b$ and taking the expectation over scenes gives the per-bin bound.
+That \mDistSplit uses the probe values in its own fit is irrelevant to the first statement, which only uses the \mDual interval. \hfill$\square$
+
+\subsection{Proof of \cref{prop:env} (envelope)}
+\label{app:proof-env}
+Let $e=\log\ytil-\log y$, $\hat\beta$ the bias estimated on head-train pixels, $\ytil'=\ytil e^{-\hat\beta}$ the corrected reading and $e'=e-\hat\beta$, so $y=\ytil'e^{-e'}$.
+Run \mDual at level $1-\alpha_s$ with probes reporting $\ytil'$.
+By \cref{thm:dual}, for every test image, the expected fraction of $\cE_i$ with $\ytil'\notin[\ell,u]$ is at most $\alpha_s$.
+The bands $[-a_c(\lambda),b_c(\lambda)]$ are quantiles of $e'$ on head-train pixels only, so they form a fixed family that shrinks as $\lambda$ grows ($\lambda=0$: infinite bands).
+Hence the loss $L_u(\lambda)$, the fraction of scene $u$'s pixels whose $e'$ lies outside the band of their class, lies in $[0,1]$, is non-decreasing in $\lambda$, and $L_u(0)=0$.
+With exchangeable calibration and test scenes, conformal risk control (written for a loss that grows with $\lambda$) gives $\E[L_{\text{test}}(\hat\lambda)]\le\alpha_e$.
+If $\ytil'(p)\in[\ell(p),u(p)]$ and $e'(p)\in[-a_{c(p)},b_{c(p)}]$, then $y(p)\in[\ell(p)e^{-b_{c(p)}},u(p)e^{a_{c(p)}}]=C^{\text{env}}(p)$.
+So the fraction of a test scene's pixels that miss $y$ is at most the sum of the two failure fractions, whose expectations are at most $\alpha_s$ and $\alpha_e$. \hfill$\square$
+
+\noindent\emph{Why one risk control.} Conformal risk control cannot certify a level below $1/(U+1)$, which is $0.026$ with $U=37$ calibration scenes per split.
+Per-class one-sided targets proportional to the class shares (1.1, 4.3 and 94.6\% of pixels for confidence 0, 1, 2) would be $0.0003$, $0.001$ and $0.024$, and every threshold would be infinite.
+A single two-sided risk control over one class-adaptive parameter avoids this; the grid has 400 log-spaced values in $[10^{-6},0.5]$.
+
+\section{Which method gives which guarantee}
+\label{app:notions}
+\begin{table}[h]
+\centering\small
+\caption{\textbf{Guarantees at level $1-\alpha$.} ``Per image'' is in expectation over random anchors or probes and concerns the values they report. $^*$Per distance bin, averaged over scenes. $^\dagger$With a reference sensor; the depth guarantee is a scene average.}
+\label{tab:notions}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lllcc@{}}
+\toprule
+Method & Stage & Marginal unit & Per image & Per bin$^*$ \\
+\midrule
+K1, V4, K2, K3 (+ scene versions) & wrapper & image (scene) & -- & depth bins (K3) \\
+\mRescale, \mHybrid & anchors & scene & -- & -- \\
+\mLocal & anchors & -- & uniform anchors only & -- \\
+\mBoth & anchors & scene & uniform anchors only & -- \\
+\mDistSplit (\mDist) & anchors & scene & -- & yes \\
+\mLocalSplit & dual & -- & yes & -- \\
+\mDistBoth & dual & scene & yes & yes \\
+\midrule
+\mDual & dual & -- & yes, any layout & -- \\
+\mDualBoth & dual & scene & yes, any layout & yes \\
+\mDualEnv & dual & scene$^\dagger$ & sensor part only & -- \\
+\mSplitCP (completion centre) & -- & scene & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{The distance-aware centre and scale}
+\label{app:adist}
+For pixel $p$, with anchor residuals $\dtil$ at the anchor set $\cA$ ($\cA=\cS$ for \mDual, all $k$ measurements for \mDistSplit):
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+\item \textbf{Shift $m(p)$}, one of: \emph{median} (image median of $\dtil|_\cA$); \emph{knn} (median of the $K=16$ nearest anchors); \emph{kernel} (Gaussian-weighted mean of the 16 nearest, bandwidth $h\in\{0.05,0.1,0.2\}$ of the diagonal); \emph{bilateral} (kernel weights times a Gaussian similarity in $\log\yhat$, bandwidth $h_d\in\{0.1,0.3\}$).
+\item \textbf{Spread $\sigma(p)$}: median absolute deviation of the 16 nearest anchor residuals around their median.
+\item \textbf{Scale} $s(p)=(\sigma(p)+\tau)\,g(\delta_\cA(p))$, with floor $\tau$ and non-decreasing $g$ from isotonic regression of normalized error on distance, capped at its 99.9th percentile on head-train.
+\item \textbf{Selection}: per anchor draw, the variant and bandwidths with the best held-out log interval score on 200 head-train images with the same layout; $\tau$, $g$ and the cap per layout. No calibration or test data are used.
+In the broad study the automatic choice was a median 0.3\% wider than the best fixed variant chosen after the fact, and chose the bilateral variant 55\% of the time.
+\end{itemize}
+Distance bins: $\delta<0.02$, $0.02$--$0.05$, $0.05$--$0.1$, $0.1$--$0.2$, $\ge0.2$ of the image diagonal.
+A bin is merged into its nearer neighbour if fewer than 5\% of head-train images have 10 pixels in it, or fewer than $2/\alpha-1=19$ calibration scenes do.
+
+\section{Broad-study details}
+\label{app:broad}
+
+\begin{table}[h]
+\centering\small
+\caption{\textbf{Validity notions and calibrators of the conformal wrapper} (\cref{sec:method:wrapper}).}
+\label{tab:calibrators}
+\begin{tabular}{@{}p{0.62\linewidth}l@{}}
+\toprule
+Promise at level $1-\alpha$ & Calibrator \\
+\midrule
+none (pixels treated as exchangeable; naive baseline) & K0 \\
+expected fraction of missed pixels in a new image $\le\alpha$ & K1 (CRC) \\
+the same for a new scene, scenes weighted equally & K1-scene \\
+K1's statement with probability $\ge1-\delta$ over the calibration draw & RCPS \\
+each fixed patch covered entirely with probability $\ge1-\alpha$ & K2, K2-scene \\
+K1 separately within groups (predicted-depth bins; edge vs.\ smooth pixels) & K3-depth, K3-edge \\
+with probability $\ge1-\alpha$ a new image has $\ge1-\beta$ of its pixels covered & V4, V4-scene \\
+for every test image, expected coverage over random anchors $\ge1-\alpha$ & \mLocal, \mBoth \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Anchors versus no anchors (E11; 5 splits $\times$ 6 anchor draws).}
+Median relative width at matched average coverage, without anchors and with \mHybrid at $k=20$:
+NYU 0.686$\to$0.186 (DA-V2, $3.7\times$), 0.289$\to$0.146 (UniDepthV2), 0.375$\to$0.209 (Depth Pro), 0.268$\to$0.166 (Metric3D v2);
+KITTI 0.646$\to$0.513 (DA-V2), 0.369$\to$0.225 (UniDepthV2), 0.716$\to$0.335 (Depth Pro), 0.260$\to$0.230 (Metric3D v2, $1.13\times$).
+The share of pixels where the interval claims the surface is farther than it is falls from 8.1\% to 2.9\% with \mBoth (NYU, DA-V2).
+On DIODE, with 3--4 calibration scans, every cross-image method is infinite, while \mLocal at $k=200$ gives 0.900 coverage with 0\% short images.
+
+\paragraph{Structured anchors (E13; 5 splits $\times$ 3 draws).}
+\mLocal coverage at $k=20$ / $k=200$, range over the six NYU/KITTI pairs (theory under uniform anchors: 0.909 / 0.901):
+uniform 0.908--0.910 / 0.901; rows 0.880--0.887 / 0.868--0.876; cluster 0.255--0.364 / 0.371--0.468; edges 0.918--0.954 / 0.925--0.960; near 0.746--0.791 / 0.708--0.760.
+Its median width at $k=20$ was 0.020--0.046 under clustered anchors against 0.15--0.45 under uniform ones.
+Depth Pro reproduces all three E13 findings (\mLocal, clustered anchors, $k=20$: 0.30 on KITTI, 0.29 on NYU).
+
+\paragraph{Layout mismatch and LSCP (E15; 3 splits $\times$ 2 draws).}
+Matched calibration covers 0.914--0.921 for all three cross-image methods.
+The worst mismatched calibrations average 0.852 (\mRescale, uniform $\to$ cluster), 0.774 (\mHybrid, edges $\to$ cluster, lowest pair 0.71) and 0.863 (\mDist, near $\to$ edges).
+Calibrating on a random mixture of layouts averages to the target over the mixture, but \mHybrid@mix covers only 0.845--0.853 on clustered test anchors.
+The largest threshold over layouts (@max) covers 0.915--0.979 on average over pairs at every test layout, lowest pair at least 0.89.
+\mDist@max is 15--52\% narrower than \mHybrid@max unless the deployed anchors are clustered.
+LSCP~\cite{jiang2024lscp}, run in each image, has no finite-sample guarantee here and covers 0.17--0.93 depending on the layout.
+
+\paragraph{Noisy anchors (E16; 3 splits $\times$ 2 draws).}
+Sources: Gaussian noise (2\%, 5\%), gross outliers (5\%, 10\% of anchors), a 5\% scale bias, and real single-scan KITTI LiDAR.
+With calibration anchors from the same sensor, \mRescale, \mHybrid and \mDist cover 0.916--0.925 under every source, but \mDist loses most of its width advantage under frequent outliers.
+Coverage of methods calibrated on clean anchors and deployed with the noisy sensor, mean (lowest pair), $k=20$ / $k=200$:
+
+\begin{center}
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Source & \mRescale@clean & \mHybrid@clean & \mDist@clean \\
+\midrule
+Gaussian 2\% & 0.917 / 0.918 & 0.931 / 0.939 & 0.923 / 0.942 \\
+Gaussian 5\% & 0.916 / 0.920 & 0.950 / 0.963 & 0.914 (0.87) / 0.960 \\
+outliers 5\% & 0.915 / 0.916 & 0.923 / 0.927 & 0.852 (0.81) / 0.764 (0.68) \\
+outliers 10\% & 0.915 / 0.916 & 0.928 / 0.934 & 0.793 (0.71) / 0.662 (0.54) \\
+bias 5\% & 0.862 (0.77) / 0.861 (0.76) & 0.831 (0.66) / 0.815 (0.62) & 0.737 (0.48) / 0.364 (0.14) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\mLocal and LSCP cover the sensor's reading: zero-mean noise makes them over-cover, and a 5\% bias breaks them (\mLocal 0.78 / 0.73, LSCP 0.58 / 0.38 at $k=20$ / 200).
+Real KITTI LiDAR anchors change little (\mDist 14--19\% wider), but on KITTI the ground truth itself comes from LiDAR, so this is not an independent check.
+
+\paragraph{Safety queries (E12; 20 splits).}
+The query is the nearest true depth inside a fixed forward region, and inside each of its three lanes.
+A bound is violated when it claims the nearest surface is farther than it is.
+Ranges over the six pairs (thresholds 15\,m on KITTI, 1.5\,m on NYU; a method's own target in bold):
+
+\begin{center}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Method & Region min.\ over-est. & Some lane over-est. & Bound / true min. & False alarms \\
+\midrule
+point prediction & 0.41--0.94 & 0.51--0.98 & 0.98--1.20 & 0.01--0.13 \\
+K1 (two-sided, per pixel) & 0.04--0.18 & 0.07--0.38 & 0.78--0.92 & 0.17--0.59 \\
+\mBoth, $k=20$ & 0.02--0.11 & 0.05--0.18 & 0.81--0.95 & 0.20--0.51 \\
+every region pixel at once & $\le$0.001 & $\le$0.001 & 0.24--0.45 & 0.99--1.00 \\
+task-scalar (region minimum) & \textbf{0.103--0.111} & 0.14--0.24 & 0.82--0.89 & 0.25--0.52 \\
+lane-event (worst lane) & 0.04--0.09 & \textbf{0.105--0.116} & 0.78--0.87 & 0.32--0.62 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+A guarantee protects only the question it was calibrated for.
+The averaging unit (image or scene) is part of the guarantee as well: each version of a guarantee holds for its own averaging and can fail for the other.
+
+\paragraph{Metric3D v2 and ETH3D.}
+Metric3D v2, which receives the calibrated focal length, is the most accurate model on every dataset.
+Its confidence map correlates positively with the error on all five datasets and is the best score on three of them, whereas UniDepthV2's confidence has no absolute scale and its correlation with the error changes sign across datasets.
+It is also far more robust to the domain shifts of E5 and gains least from anchors.
+On ETH3D, image-level K1 with Depth Pro covers 0.690 on average, about 4.5 standard errors below the target.
+The cause is a scene-dependent scale bias: the median per-image $\log(y/\yhat)$ ranges from $-0.13$ to $+1.35$ across scenes.
+The valid scene-level calibrators need at least 9 calibration scenes at $\alpha=0.1$ and return infinite intervals with 4.
+
+\section{An interval-score blow-up under clustered anchors (E19c)}
+\label{app:blowup}
+For \omnidc under clustered anchors only, the arms built on the distance model have, in some splits, extreme upper bounds on 0.1--0.4\% of pixels.
+These arms are \mDistSplit, \mDualBoth, and \mDual in splits where its scale falls back to the kernel form.
+\omnidc reproduces its own input anchors, so the anchor residuals that the distance model reads are almost zero.
+Its spread estimate and floor collapse to about $10^{-6}$, and far-bin thresholds become huge.
+The primary IS (a median over images) and median widths are unaffected, but a mean over images is not.
+This is a property of calibrating, with anchor residuals, a centre that has consumed those anchors.
+\mDual's probe-based threshold is far less affected.
+
+\section{Datasets}
+\label{app:data}
+\begin{table}[h]
+\centering\small
+\caption{\textbf{Datasets.} Units are the exchangeable scenes used for splitting.}
+\label{tab:data}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}llrll@{}}
+\toprule
+Dataset & Units & Images & Ground truth & Used in \\
+\midrule
+NYU Depth v2 (labelled) & 464 rooms & 1{,}449 & Kinect, $<$10\,m & E0--E17 \\
+KITTI (Eigen test + 800 train) & 61 drives & 1{,}452 & LiDAR, $<$80\,m & E0--E17 \\
+DIODE indoor / outdoor (val.) & 10 scans each & 325 / 446 & laser scanner & E0--E5 \\
+ETH3D (high-res.\ training) & 13 scenes & 454 & laser scan & E0--E4 \\
+ARKitScenes (upsampling val.) & \NumArkVisits{} visits & \NumArkFrames{} & Faro laser; iPad LiDAR as sensor & E0, E16--E20 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Probe-budget ablation (E17)}
+\label{app:budget}
+With 20 probes the 10th percentile of $\Cov_i$ was \NumMeasPTenTwenty{} (law: \NumBetaPTenTwenty), and \NumESeventeenShort{} of images were short in one draw (law: \NumBetaShortOneTwenty\%).
+This is an implementation check of the randomization (\cref{fig:dual}b), not a finding.
+With 10 probes, \mLocalSplit, and hence \mDistBoth, is infinite on every image (5 calibration probes, fewer than the 9 needed), while \mDual stays finite at median width \NumWDualTenFifty/\NumWDualTenTwoHundred{} ($k=50/200$).
+With 40 probes the short share falls to \NumESeventeenShortForty{} (law: \NumBetaShortOneForty\%) at similar width (\NumWDualFortyFifty/\NumWDualFortyTwoHundred).
+However, under clustered anchors \mDual then misses the 10\% margin over \mDistBoth, so we keep $n=20$.
+
+\section{Experiment index}
+\label{app:index}
+\begin{table}[h]
+\centering\small
+\caption{\textbf{Experiments.} Broad study E0--E16; main method E17--E20 (``c'': confirmatory replication).}
+\label{tab:index}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lp{0.52\linewidth}p{0.3\linewidth}@{}}
+\toprule
+ID & Question & Size \\
+\midrule
+E0 & accuracy of the frozen models & official test subsets \\
+E1 & do guarantees behave as theory says on synthetic data; does spread follow images or pixels? & 100 repetitions per setting \\
+E2--E4, E6, E9 & best scores and calibrators; conditional coverage; raw vs.\ conformal; $\alpha$ sweep & up to 17 pairs $\times$ 9 scores $\times$ 10 calibrators $\times$ 3 $\alpha$ $\times$ 20 splits \\
+E5 & does a guarantee survive domain shift; does recalibration restore it? & 8 settings $\times$ 10 splits \\
+E8 & coverage variability vs.\ calibration size: images or pixels? & NYU, KITTI $\times$ 50 splits \\
+E10 & computational cost & -- \\
+E11 & coverage, spread and width vs.\ number of random anchors & 10 pairs $\times$ 8 $k$ $\times$ 5 splits $\times$ 6 draws \\
+E12 & does the interval protect a safety query? & 6 pairs $\times$ 2 $\alpha$ $\times$ 20 splits \\
+E13 & do anchor guarantees survive structured layouts? & 6 pairs $\times$ 5 layouts $\times$ 3 $k$ $\times$ 5 $\times$ 3 \\
+E14 & distance-aware anchors; budget split & 6 pairs $\times$ 5 layouts $\times$ 5 $k$ $\times$ 3 $\times$ 2 \\
+E15 & calibration--deployment layout mismatch; LSCP & 6 pairs $\times$ 5 test layouts $\times$ 7 calibrations \\
+E16 & noisy and real LiDAR anchors & 6 pairs $\times$ 6 sources $\times$ 2 $k$ $\times$ 3 $\times$ 2 \\
+\midrule
+E17 / E17c & \mDual and \mDualBoth vs.\ \mDistBoth on NYU, KITTI; probe budget; $r=n$ arm & 6 pairs $\times$ 5 layouts $\times$ 2 $k$; 3 $\times$ 2 / 20 $\times$ 10 \\
+E18 / E18c & laser vs.\ iPad values for anchors and probes (ARKitScenes) & 2 models $\times$ 2 layouts $\times$ 4 cells; 20 $\times$ 2 / 20 $\times$ 10 \\
+E19 / E19c & completion network vs.\ frozen model as centre & 2 layouts $\times$ 2 probe sources; 3 $\times$ 1 / 10 $\times$ 1 \\
+E20 & sensor-error envelope & 2 models $\times$ 2 layouts; 20 $\times$ 10 (running) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Reproducibility}
+\label{app:repro}
+Every number in this report is a macro generated from the experiment summaries (\texttt{paper/numbers.tex}, written by \texttt{paper/tools/gen\_numbers.py}).
+The confirmatory comparisons come from \texttt{experiments/confirm\_analysis.py}, which writes the validity and paired-bootstrap tables, and the analysis plan with its amendment log is in \texttt{docs/ANALYSIS\_PLAN\_2026-11-03.md}.
+The broad-study numbers are taken from the project report (\texttt{docs/PROJECT\_REPORT.md}), which also lists the scripts per experiment.
+\TODO{public code link after the double-blind review period, if permitted}

@@ -1,0 +1,67 @@
+% Course project report (NeurIPS 2025 style, [final] option: names visible, no line numbers, no checklist).
+% Build from this folder:  pdflatex main && bibtex main && pdflatex main && pdflatex main
+% Numbers, macros, bibliography and figures are shared with ../paper (single source); nothing there is modified.
+\documentclass{article}
+
+\PassOptionsToPackage{numbers,sort&compress}{natbib}
+\usepackage[final]{neurips_2025}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\renewcommand{\ttdefault}{lmtt}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{nicefrac}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\input{shims}
+\input{../paper/macros}
+\input{../paper/numbers}
+\input{report_macros}
+
+\usepackage[colorlinks,allcolors=blue!50!black]{hyperref}
+\usepackage[capitalize]{cleveref}
+\crefname{proposition}{Proposition}{Propositions}
+\crefname{theorem}{Theorem}{Theorems}
+
+\graphicspath{{../paper/}{../results/figures/}}
+
+% The [final] option prints a NeurIPS 2025 conference notice on page 1; this is a course report, not a NeurIPS paper.
+\makeatletter
+\renewcommand{\@noticestring}{Course project report. \TODO{course name, code and semester}}
+\makeatother
+
+\title{SpaCal-Depth: Guaranteed Per-Pixel Depth Intervals\\for Frozen Monocular Models and Sparse Depth Measurements}
+
+\author{%
+  \TODO{authors, roll numbers, emails} \\
+  \TODO{department and institute} \\
+}
+
+\begin{document}
+\maketitle
+
+\input{sections/abstract}
+\input{sections/intro}
+\input{sections/literature}
+\input{sections/problem}
+\input{sections/method}
+\input{sections/experiments}
+\input{sections/conclusions}
+
+{\small
+\bibliographystyle{plainnat}
+\bibliography{../paper/refs,extra}
+}
+
+\appendix
+\input{sections/appendix}
+
+\end{document}

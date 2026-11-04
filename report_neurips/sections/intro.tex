@@ -1,0 +1,51 @@
+\section{Introduction}
+\label{sec:intro}
+
+Single-image depth estimation has moved from relative depth, known only up to an unknown scale and shift~\cite{eigen2014depth,ranftl2022midas}, to \emph{metric} foundation models trained on large mixtures of data.
+Depth Anything V2~\cite{yang2024dav2}, UniDepthV2~\cite{piccinelli2025unidepthv2}, Metric3D v2~\cite{hu2024metric3dv2} and Depth Pro~\cite{bochkovskii2025depthpro} output metres zero-shot.
+An augmented-reality device placing content on a table, or an indoor robot planning around furniture, can run such a model, but it also needs to know how far to trust each pixel.
+Native uncertainty signals are not reliable.
+In our measurements, flip disagreement and ensemble spread cover only 3--43\% of pixels when they claim 90\% (\cref{sec:res:broad}), and the native confidences of feed-forward 3D reconstruction models are overconfident~\cite{deng2026calibrationaudit}.
+
+\emph{Conformal prediction}~\cite{vovk2005alrw,lei2018distribution,angelopoulos2023gentle} offers a principled alternative.
+Given a held-out calibration set that is exchangeable with the test data, it turns any predictor into intervals that cover the truth with a user-chosen probability, $1-\alpha$, in finite samples and without distributional assumptions.
+This project asks what it takes to obtain such guarantees for dense metric depth from a frozen model, and what kind of guarantee is worth having.
+
+\paragraph{Two parts.}
+The project proceeded in two phases.
+The first (experiments E0--E16) is a broad study of conformal wrappers for frozen depth models: four models, five datasets, nine difficulty scores and ten calibrators, followed by a study of sparse test-time depth measurements (\emph{anchors}) under realistic sensor layouts and sensor noise.
+Its findings motivate the second phase (E17--E20), the main contribution: a calibration layer that gives a per-image guarantee even when the measurements are placed by a structured sensor.
+
+\paragraph{From the broad study to the main method.}
+Three findings of the broad study shape the method (\cref{sec:res:broad}).
+(i)~Pixels are not exchangeable; the image or the scene is the unit.
+(ii)~A guarantee that averages over images hides individual images with large errors, mostly one global scale error per image, which about 20 sparse metric anchors remove.
+(iii)~Calibrating inside each image on its own anchors gives a per-image guarantee, but only if the anchors are a uniform random sample of pixels.
+When anchors placed by a real sensor (scan lines, one cluster, only near surfaces) both correct the prediction and calibrate it, nearby anchors agree, the calibration sees small errors, and the intervals become \emph{narrower} while missing most of the image: coverage falls to \NumLocalClusterCovLo--\NumLocalClusterCovHi{} under clustered anchors at a 0.9 target.
+Only dense ground truth reveals this failure.
+
+\paragraph{Main idea.}
+We give the sensor budget two roles (\cref{fig:pipeline}).
+\emph{Prediction anchors} follow the sensor layout, whatever it is, and build a local centre and scale around the frozen prediction.
+\emph{Calibration probes}, a few measurements placed uniformly at random and never shown to the predictor, set one conformal threshold per image.
+Because centre and scale are fixed before the probes are revealed, a rank argument gives a per-image coverage guarantee, in expectation over the probe draw, for any anchor layout and any centre that ignores the probes, including a depth-completion network.
+No calibration images are needed.
+The spread of per-image coverage follows an exact beta-binomial law, so the number of probes is a design parameter that trades sensor budget for per-image reliability.
+
+\paragraph{Contributions.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+\item \textbf{Broad study (foundation):} a post-hoc conformal wrapper for frozen metric depth models with average, scene-level, image-event, patch and group-conditional guarantees.
+It shows that the image or scene is the exchangeable unit and that one scale error per image dominates.
+It also evaluates four anchor methods and a distance-aware one (\mDist) under structured layouts, layout mismatch, noisy and real LiDAR anchors, and a downstream safety query (\cref{sec:res:broad}).
+\item \textbf{Failure:} reusing structured anchors for calibration voids the per-image guarantee, silently and with narrower intervals (\cref{sec:res:failure}).
+\item \textbf{Dual-role calibration layer (main contribution):} \mDual gives a per-image guarantee for any layout and any probe-independent centre, with a known per-image coverage law; \mDualBoth adds a guarantee by distance to the nearest anchor (\cref{sec:method:dual}).
+\item \textbf{Which centre, and what is certified:} on ARKitScenes~\cite{baruch2021arkitscenes}, with iPad LiDAR checked against laser scans, a confirmatory comparison of a depth-completion network~\cite{zuo2025omnidc} with the frozen model as centre, and the finding that probes certify the quantity they measure (\cref{sec:res:omni,sec:res:sensor}).
+\end{itemize}
+The statistical ingredients are known: fitting and calibration sets inside one instance~\cite{gui2023cmc}, within-field exchangeability~\cite{mao2024spatial}, and the conditional coverage law of split conformal prediction~\cite{vovk2012conditional}.
+Our contribution is their composition for sparse-guided dense depth, the analysis of the sensor budget, and an evaluation with an independent sensor.
+
+\paragraph{Status of the numbers.}
+The project ends with a confirmatory replication whose analysis plan was fixed before the runs (\cref{sec:protocol}).
+At the time of writing, the depth-completion comparison (E19c) is complete, while the replications on NYU/KITTI (E17c) and of the sensor study (E18c), and the sensor-error envelope (E20), are still running.
+Numbers printed in \prelim{orange} are exploratory and will be replaced by the confirmatory run; \pending{red brackets} mark values that are not yet available.
+Numbers from the broad study (E0--E16) are final for that study and printed in black.

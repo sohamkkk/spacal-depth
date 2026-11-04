@@ -1,0 +1,54 @@
+\section{Literature Review}
+\label{sec:literature}
+
+\paragraph{Monocular metric depth foundation models.}
+Learned single-image depth started with multi-scale regression networks~\cite{eigen2014depth}.
+For a long time it was relative: MiDaS~\cite{ranftl2022midas} predicts depth up to an unknown scale and shift, recovered per image by least squares against a few known depths.
+Large training mixtures and camera-aware designs have since made it metric and zero-shot.
+Depth Anything V2~\cite{yang2024dav2} provides metric fine-tunes for indoor and outdoor scenes; UniDepth and UniDepthV2~\cite{piccinelli2024unidepth,piccinelli2025unidepthv2} predict camera and depth jointly; Metric3D v2~\cite{hu2024metric3dv2} predicts in a canonical camera space and rescales by the focal length; Depth Pro~\cite{bochkovskii2025depthpro} estimates the field of view itself.
+We use four of these as frozen black boxes.
+Their remaining error has a large per-image scale component (\cref{sec:res:broad}), the same component that MiDaS-style alignment removes.
+
+\paragraph{Depth completion and sparse-guided depth.}
+Depth completion predicts dense depth from RGB and sparse depth.
+Approaches range from early learned models~\cite{ma2018sparse,uhrig2017sparsity} and spatial propagation networks~\cite{cheng2018cspn,park2020nlspn} to recent zero-shot methods.
+\omnidc~\cite{zuo2025omnidc} is trained on synthetic data with diverse sparse patterns; Prompt Depth Anything~\cite{lin2025promptda} conditions a foundation model on a low-resolution LiDAR map; Marigold-DC~\cite{viola2025marigolddc} guides a diffusion depth prior with sparse points; Prior Depth Anything~\cite{wang2025priorda} fuses metric priors of any sparsity with a relative-depth model.
+VI-Depth~\cite{wofk2023videpth} and MRAC~\cite{roy2026mrac} align a frozen monocular prediction to sparse metric depth before a learned refinement. All of these output point estimates.
+Uncertainty-aware completion~\cite{eldesokey2020uncertainty,qu2021bdbf} learns a per-pixel uncertainty but gives no coverage guarantee.
+Our layer does not compete with completion methods: it wraps whichever centre is best, and we run it on \omnidc as well as on frozen models.
+
+\paragraph{Uncertainty for depth.}
+Bayesian, ensemble, self-supervised and gradient-based uncertainties~\cite{kendall2017uncertainties,lakshminarayanan2017ensembles,poggi2020uncertainty,hornauer2022gradient} rank pixels by difficulty, without a guarantee that a nominal 90\% interval covers 90\% of pixels.
+We use several of them as \emph{scores} inside conformal calibration (\cref{sec:method:wrapper}).
+Native confidences of feed-forward 3D reconstruction models are overconfident, and after a per-model repair about two thirds of held-out scenes still miss nominal coverage by more than five points~\cite{deng2026calibrationaudit}.
+
+\paragraph{Conformal prediction and risk control.}
+Split conformal prediction~\cite{vovk2005alrw,lei2018distribution,angelopoulos2023gentle} computes a quantile of nonconformity scores on a calibration set.
+If calibration and test points are exchangeable, the resulting interval covers a new point with probability at least $1-\alpha$.
+Conformal risk control (CRC)~\cite{angelopoulos2024crc} extends this from miscoverage of one point to the expectation of any bounded monotone loss, such as the fraction of an image's pixels left uncovered.
+Risk-controlling prediction sets~\cite{bates2021rcps} make the same statement with high probability over the calibration draw.
+When data are grouped (pixels in images, images in scenes), the group is the natural exchangeable unit, and hierarchical conformal methods~\cite{dunn2023hierarchical} treat this case.
+Our scene-level calibrators are of this kind.
+
+\paragraph{Conformal prediction for dense outputs.}
+Image-to-image regression~\cite{angelopoulos2022im2im}, K-RCPS~\cite{teneggi2023krcps} and conformal segmentation~\cite{mossina2024segmentation} calibrate across images, so their guarantees average over images.
+Kandinsky conformal prediction~\cite{brunekreef2024kandinsky,bairaktari2025kandinsky} pools scores of similar regions across calibration images, a guarantee between image-wise and pixel-wise.
+Online risk control~\cite{feldman2023onlinerisk} bounds the long-run miscoverage over a stream; its depth experiments fit each frame's scale and shift to a few hundred true depth pixels, a precedent for anchor rescaling.
+Distribution-free conditional coverage is impossible in general~\cite{vovk2012conditional,barber2021limits}.
+Mondrian calibration~\cite{vovk2005alrw}, localized conformal prediction~\cite{guan2023localized} and covariate-class guarantees~\cite{gibbs2023conditional} recover it for chosen groups, as our depth-binned and distance-binned calibrators do.
+Without exchangeability, coverage degrades with the distance from it~\cite{barber2023beyond} or must be restored by reweighting~\cite{tibshirani2019covshift}; structured anchors are such a departure, and we restore exchangeability by design instead.
+
+\paragraph{Conformal prediction inside one instance.}
+A per-image guarantee needs calibration data from the test image itself.
+Conformalized matrix completion~\cite{gui2023cmc} splits the observed entries of one matrix into a fitting set and a calibration set; this is the statistical template of our dual roles.
+Within one spatial field, randomly sampled locations are exchangeable with unsampled ones~\cite{mao2024spatial}.
+Local spatial conformal prediction (LSCP)~\cite{jiang2024lscp} builds intervals from nearby observations, and design-based conformal prediction~\cite{wieczorek2023design} ties validity to the sampling design.
+These methods assume a known random sampling design; we face a sensor that imposes a structured one, and we spend a small random budget to restore a known design.
+With noisy calibration labels, conformal sets cover the noisy label, which is conservative for the clean label only under dispersive noise~\cite{einbinder2024labelnoise}.
+Sensor-valued probes are noisy labels with a systematic bias (\cref{sec:res:sensor}).
+
+\paragraph{Decisions and sensing.}
+For safety-critical use, the guarantee should concern the quantity a decision depends on.
+Simultaneous coverage of every pixel is excessive for this purpose~\cite{lekeufack2024cdt}, a point our safety-query experiment measures on depth (\cref{sec:res:broad}).
+Sample placement has been optimized for completion accuracy, end-to-end~\cite{bergman2020adaptivelidar} or from uncertainty~\cite{taguchi2023interactive}, and steerable sensors make random sampling possible~\cite{pittaluga2020mems}.
+We study given layouts and propose no placement strategy.
