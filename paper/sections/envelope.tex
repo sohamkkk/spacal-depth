@@ -1,0 +1,23 @@
+%% Sensor-error envelope: shared body of main Sec. 4.6 (\envelopemaintrue) and Supp. D (\envelopemainfalse).
+%% Compiled in both documents, so it refers to Theorem 1 by its fixed main-paper number, not by \cref.
+With sensor-valued probes, Theorem~1 certifies the reading $\ytil$, not the depth $y$.
+Let $e(p)=\log\ytil(p)-\log y(p)$ and suppose a reference (here a laser scan) exists on calibration scenes.
+We (a) subtract a global bias $\hat\beta$, the median of $e$ on head-train pixels, from the probe values, and (b) give each sensor-confidence class $c$ (ARKit: $0/1/2$) the band $[-a_c,b_c]=[Q_c(\lambda/2),Q_c(1-\lambda/2)]$ of the corrected head-train error, clipped to contain $0$.
+One conformal risk control~\cite{angelopoulos2024crc} over the $U$ calibration scenes sets $\hat\lambda$: the largest grid value with $\frac{U}{U+1}\hat L(\lambda)+\frac{1}{U+1}\le\alpha_e$, $\hat L$ the mean fraction of a scene's pixels outside their band (none feasible: infinite bands).
+With $[\ell,u]$ the \mDual interval for the corrected reading at level $1-\alpha_s$, the enveloped interval is
+\begin{equation}
+C^{\text{env}}(p)=\big[\ell(p)\,e^{-b_{c(p)}},\;u(p)\,e^{a_{c(p)}}\big].
+\label{eq:envelope}
+\end{equation}
+
+\begin{proposition}[Envelope]
+\label{prop:env}
+If the sensor reading and its confidence are defined at every evaluation pixel, the miscoverage of $y$ by $C^{\text{env}}$, averaged over test scenes and probe draws, is at most $\alpha_s+\alpha_e$.
+\end{proposition}
+
+\ifenvelopemain
+\noindent\emph{Proof sketch.} $y=\ytil e^{-\hat\beta}e^{-(e-\hat\beta)}$, so $y\notin C^{\text{env}}(p)$ requires either the corrected reading outside $[\ell,u]$ (probability at most $\alpha_s$ per image, Theorem~1) or the corrected error outside its band (at most $\alpha_e$ in expectation, by risk control); a union bound concludes. Supp.~D. \hfill$\square$
+
+\fi
+The per-image guarantee on $y$ is not retained: the envelope's part holds on average over scenes.
+We fix $\alpha_s=\alpha_e=0.05$ before the run, so that $\alpha_s+\alpha_e=\alpha$.

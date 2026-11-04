@@ -1,0 +1,31 @@
+\section{Introduction}
+\label{sec:intro}
+
+An AR device placing content on a table, or an indoor robot planning around furniture, can run a monocular metric depth foundation model~\cite{yang2024dav2,piccinelli2025unidepthv2,hu2024metric3dv2,bochkovskii2025depthpro} next to a cheap sparse depth sensor: a phone LiDAR, a time-of-flight module, a few-beam scanner or SLAM points.
+Such a system needs, for each frame, an interval on every pixel's depth that holds for that frame, not on average over a dataset.
+Conformal calibration inside the frame, on the sparse measurements, promises exactly this~\cite{mao2024spatial,gui2023cmc}, but only if the measurements are placed uniformly at random.
+Real sensors return scan lines, clusters, depth edges, or only nearby surfaces.
+When such structured measurements both correct the prediction and calibrate it (\cref{fig:teaser}), nearby measurements agree, the calibration sees small errors, and the intervals become \emph{narrower} while missing most of the frame: with clustered measurements, coverage drops to \NumLocalClusterCovLo--\NumLocalClusterCovHi{} at a $0.9$ target.
+Only dense ground truth reveals this.
+
+The sparse sensor is worth keeping.
+Native confidences are not reliable~\cite{deng2026calibrationaudit}, and calibration across images gives only an average guarantee that hides images with far larger errors: an image's global scale error explains \NumScaleVarLo--\NumScaleVarHi\% of the image-to-image variation in interval coverage on NYU and KITTI.
+Aligning to a few metric points~\cite{ranftl2022midas,wofk2023videpth} removes most of it: without anchors, split conformal prediction on a frozen model has several times the interval score of the anchored methods (\cref{sec:res:omni}).
+We call this setting \emph{sparse-guided monocular depth}: a frozen foundation model supplies a dense prior, sparse metric measurements correct it, and calibration states what uncertainty remains.
+It overlaps with depth completion~\cite{zuo2025omnidc,lin2025promptda}; our concern is the calibration step, and a completion network is one possible centre.
+
+\paragraph{Idea.}
+We give the sparse-depth budget two roles (\cref{fig:pipeline}).
+\emph{Prediction anchors} follow the sensor layout, whatever it is, and build a local centre and scale around the frozen prediction.
+\emph{Calibration probes}, a few measurements placed uniformly at random and never shown to the predictor, set one conformal threshold per image.
+Because centre and scale are fixed before the probes are revealed, a rank argument gives a per-image coverage guarantee, in expectation over the probe draw, for any anchor layout and any centre that ignores the probes, including a depth-completion network, without calibration images.
+Its spread across images follows an exact finite-population beta-binomial law, approximated by a Beta law, so the number of probes is a design choice that trades sensor budget for per-image reliability.
+The guarantee certifies whatever the probes measure: for sensor readings, the readings.
+
+The statistical ingredients are known: fitting and calibration sets inside one instance~\cite{gui2023cmc}, within-field exchangeability~\cite{mao2024spatial}, design-based conformal prediction~\cite{wieczorek2023design}, and the conditional coverage law of split conformal prediction~\cite{vovk2012conditional}.
+Our contribution is their deployment-aware composition for sparse-guided dense depth, an analysis of the sensor budget, and a validation with an independent sensor:
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+\item \textbf{Failure.} Structured sparse depth improves the prediction but, reused for calibration, voids the per-image guarantee; coverage falls short under scan-line, clustered and near-only layouts, with misses far from anchors (\cref{sec:res:failure}).
+\item \textbf{A calibration layer.} Separating prediction anchors from calibration probes (\mDual, \cref{sec:method}) gives a per-image guarantee for any layout and any probe-independent centre; the probe budget sets the per-image spread, and a hull with distance-binned calibration adds a guarantee by distance to the nearest anchor (\mDualBoth). We evaluate three frozen models and five layouts (\cref{sec:res:dual,sec:res:budget}).
+\item \textbf{Which centre, and what is certified.} On ARKitScenes~\cite{baruch2021arkitscenes} a depth-completion network~\cite{zuo2025omnidc} is the better centre under uniform anchors, the frozen model with our anchor-built centre under clustered ones (\cref{sec:res:omni}). With iPad LiDAR checked against laser scans, the layer certifies what the probes measure: laser probes certify the depth even with iPad anchors, while with iPad values for both, truth coverage falls far below the target under uniform anchors (\cref{sec:res:sensor}).
+\end{itemize}

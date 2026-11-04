@@ -1,0 +1,1242 @@
+%% =====================================================================================
+%% numbers.tex -- every experimental number used in the text, as a macro.
+%%
+%% Status tags in the comments:
+%%   [theory]   follows from the method's definition (exact or Monte Carlo of a known law); final.
+%%   [data]     dataset statistic; final unless the preprocessing changes.
+%%   [prelim]   descriptive number from the exploratory runs (3 splits x 2 draws, gamma chosen after a
+%%              first NYU/KITTI run). Rendered via \prelim{} (orange while drafting). MUST be replaced by
+%%              the confirmatory replication (20 scene/visit splits, paired bootstrap, >= 10 probe draws,
+%%              gamma frozen) before any superiority claim is printed.
+%%   [pending]  not yet available; renders as a red placeholder via \pending{}.
+%%
+%% Source keys: "UPD" = docs/REPORT_UPDATE_2026-11-02.md, "REP" = docs/PROJECT_REPORT.md.
+%% Model set caveat for every E17 [prelim] number on NYU/KITTI and ARKitScenes: the "six pairs" are
+%% {NYU, KITTI} x {DA-V2, UniDepthV2, Depth Pro} (scripts/run_new.sh, E17_PAIRS default). This IS the paper's main
+%% model set on NYU/KITTI; Metric3D v2 is supplement-only. Depth Pro is excluded on ARKitScenes only (not reproduced).
+%% =====================================================================================
+
+%% ---------- Motivation: scale error and structured-anchor failure (E11, E13) ----------
+% REP 9.10 Finding 1 (E11, 5 seeds x 6 draws, six NYU/KITTI pairs incl. Depth Pro). [prelim]
+\newcommand{\NumScaleVarLo}{\prelim{65}}
+\newcommand{\NumScaleVarHi}{\prelim{79}}
+% REP 9.16 (E13, 5 seeds x 3 draws): A-local coverage under clustered anchors, k = 20 and 200, range over pairs. [prelim]
+\newcommand{\NumLocalClusterCovLo}{\prelim{0.26}}
+\newcommand{\NumLocalClusterCovHi}{\prelim{0.47}}
+% REP 9.16: A-local median relative width, clustered vs uniform anchors, k = 20. [prelim]
+\newcommand{\NumLocalClusterWidthLo}{\prelim{0.020}}
+\newcommand{\NumLocalClusterWidthHi}{\prelim{0.046}}
+\newcommand{\NumLocalUnifWidthLo}{\prelim{0.15}}
+\newcommand{\NumLocalUnifWidthHi}{\prelim{0.45}}
+% REP 9.16: A-local coverage, near-only and scan-line (rows) layouts, range over pairs and k. [prelim]
+\newcommand{\NumLocalNearCovLo}{\prelim{0.71}}
+\newcommand{\NumLocalNearCovHi}{\prelim{0.79}}
+\newcommand{\NumLocalRowsCovLo}{\prelim{0.87}}
+\newcommand{\NumLocalRowsCovHi}{\prelim{0.89}}
+% REP 7.4 (T8): A-local theoretical coverage with 20 uniform anchors (10 calibrate): 10/11. [theory]
+\newcommand{\NumLocalTheoryTwenty}{0.909}
+% REP 9.16 Finding 3: A-local, uniform anchors, k = 20: coverage next to an anchor (< 0.02 diag) vs beyond 0.2 diag. [prelim]
+\newcommand{\NumLocalNearBinCovLo}{\prelim{0.93}}
+\newcommand{\NumLocalNearBinCovHi}{\prelim{0.94}}
+\newcommand{\NumLocalFarBinCovLo}{\prelim{0.61}}
+\newcommand{\NumLocalFarBinCovHi}{\prelim{0.84}}
+
+%% ---------- Dual-role calibration on NYU/KITTI (E17, UPD 9.22, job 46165) ----------
+% UPD 9.22 Finding 2: A-dual median relative width vs A-dist-both, median over the six pairs, range over the
+% 10 layout x k cells. [prelim]
+\newcommand{\NumDualWidthGainLo}{\prelim{16}}
+\newcommand{\NumDualWidthGainHi}{\prelim{69}}
+% UPD 9.22: A-dual is >= 10 % narrower than A-dist-both on 6/6 pairs in every one of the 10 cells
+% (the pre-registered method gate; coverage at its theoretical value). [prelim]
+\newcommand{\NumDualGatePairs}{\prelim{6}}
+\newcommand{\NumPairs}{6}
+\newcommand{\NumCells}{10}
+% UPD 9.22: A-dual image-averaged coverage, range over all cells (theory 19/21 = 0.905). [prelim]
+\newcommand{\NumDualCovLo}{\prelim{0.902}}
+\newcommand{\NumDualCovHi}{\prelim{0.907}}
+% [theory] r/(n+1) with n = 20, alpha = 0.1: 19/21.
+\newcommand{\NumDualCovTheory}{0.905}
+% UPD 9.22: A-dual-both width vs A-dist-both (median over pairs, range over cells), gate cells passed,
+% and interval score range over pairs (every pair, every cell). [prelim]
+\newcommand{\NumDualBothWidthGainLo}{\prelim{2}}
+\newcommand{\NumDualBothWidthGainHi}{\prelim{60}}
+\newcommand{\NumDualBothCellsPass}{\prelim{8}}
+\newcommand{\NumDualBothISGainLo}{\prelim{1}}
+\newcommand{\NumDualBothISGainHi}{\prelim{48}}
+% UPD 9.22: mean median relative widths over pairs and layouts, k = 50 / 200. [prelim]
+\newcommand{\NumWDistSplitFifty}{\prelim{0.154}}
+\newcommand{\NumWDistSplitTwoHundred}{\prelim{0.133}}
+\newcommand{\NumWDualFifty}{\prelim{0.187}}
+\newcommand{\NumWDualTwoHundred}{\prelim{0.161}}
+\newcommand{\NumWDualBothFifty}{\prelim{0.225}}
+\newcommand{\NumWDualBothTwoHundred}{\prelim{0.195}}
+\newcommand{\NumWDistBothFifty}{\prelim{0.280}}
+\newcommand{\NumWDistBothTwoHundred}{\prelim{0.281}}
+% UPD 9.22: coverage A-dual-both / A-dist-both (means, k = 50). [prelim]
+\newcommand{\NumCovDualBoth}{\prelim{0.959}}
+\newcommand{\NumCovDistBoth}{\prelim{0.970}}
+% UPD 9.22 Finding 5: coverage spread across distance bins holding >= 1 % of pixels, points, median over pairs,
+% range over layout x k. [prelim]
+\newcommand{\NumSpreadDualLo}{\prelim{3.9}}
+\newcommand{\NumSpreadDualHi}{\prelim{12.3}}
+\newcommand{\NumSpreadDualBothLo}{\prelim{1.3}}
+\newcommand{\NumSpreadDualBothHi}{\prelim{2.2}}
+% UPD 9.22 Finding 5: A-dual coverage, near layout k = 50, at 0.1-0.2 of the diagonal. [prelim]
+\newcommand{\NumDualFarCov}{\prelim{0.81}}
+
+%% ---------- Probe budget (T13 corollary) ----------
+% [theory] Beta(r, n+1-r) large-population approximation of the exact beta-binomial law;
+% p10 of single-draw per-image coverage, n = 10 / 20 / 40 (UPD 7.6; rechecked with scipy: 0.794/0.819/0.841).
+\newcommand{\NumBetaPTenTen}{0.795}
+\newcommand{\NumBetaPTenTwenty}{0.819}
+\newcommand{\NumBetaPTenForty}{0.841}
+% [theory] share of images below 0.85 when coverage is averaged over two independent probe draws (Monte Carlo).
+\newcommand{\NumBetaShortTwoTen}{15.3}
+\newcommand{\NumBetaShortTwoTwenty}{11.5}
+\newcommand{\NumBetaShortTwoForty}{6.6}
+% [theory] share below 0.85 for ONE probe draw (Beta CDF at 0.85): n = 10 / 20 / 40.
+\newcommand{\NumBetaShortOneTen}{19.7}
+\newcommand{\NumBetaShortOneTwenty}{17.6}
+\newcommand{\NumBetaShortOneForty}{13.0}
+% UPD 9.22 Finding 3: measured on NYU/KITTI (mean over pairs and layouts, k = 50) -- implementation check only. [prelim]
+\newcommand{\NumMeasPTenTwenty}{\prelim{0.820}}
+\newcommand{\NumMeasShortTwoTwenty}{\prelim{11.4}}
+
+%% ---------- ARKitScenes (UPD 5, 9.23) ----------
+% [data] depth-upsampling validation split after dropping one video without confidence maps.
+\newcommand{\NumArkFrames}{5{,}594}
+\newcommand{\NumArkVisits}{107}
+\newcommand{\NumArkPixelsM}{23.8}
+% [data] iPad vs Faro laser at drawn anchors: mean signed log error -0.0155 (iPad reads nearer).
+\newcommand{\NumArkIpadOffset}{1.6}
+% [data] share of pixels with ARKit confidence 2.
+\newcommand{\NumArkConfTwo}{94.6}
+% UPD 9.23 E0 (all frames). [prelim; final unless preprocessing changes]. Depth Pro aggregates deliberately omitted.
+\newcommand{\NumArkUniAbsRel}{\prelim{0.120}}
+\newcommand{\NumArkUniDeltaOne}{\prelim{0.882}}
+\newcommand{\NumArkDavAbsRel}{\prelim{0.466}}
+\newcommand{\NumArkDavDeltaOne}{\prelim{0.325}}
+% UPD 9.22 Finding 3 (ARKitScenes, laser-valued probes, n = 20): short share (avg. of 2 draws) and p10.
+% Recomputed 2 Nov WITHOUT Depth Pro: {DA-V2 indoor, UniDepthV2} x 5 layouts x k in {50, 200} (results/e17_p20_g05). [prelim]
+\newcommand{\NumArkShortLo}{\prelim{10.5}}
+\newcommand{\NumArkShortHi}{\prelim{12.1}}
+\newcommand{\NumArkPTenLo}{\prelim{0.817}}
+\newcommand{\NumArkPTenHi}{\prelim{0.821}}
+% UPD 9.23 E16 (iPad-valued anchors, uniform, k = 200), UniDepthV2: within-image methods certify the sensor reading. [prelim]
+\newcommand{\NumArkLocalIpadCovUni}{\prelim{0.854}}
+\newcommand{\NumArkLscpIpadCovUni}{\prelim{0.548}}
+
+%% ---------- E18: value-source factorial on ARKitScenes, frozen models, 20 seeds (running) ----------
+% Uniform layout finished on the cluster, not yet pulled; cluster layout at 3/20 seeds.
+% Truth coverage of A-dual, (structured-anchor source / probe source), uniform layout. [pending]
+% NOTE: a 400-image smoke test gave ~0.52 truth coverage with iPad-valued probes -- do NOT print; wait for E18.
+\newcommand{\NumEEighteenCovLL}{\pending{E18 cov.\ laser/laser}}
+\newcommand{\NumEEighteenCovIL}{\pending{E18 cov.\ iPad/laser}}
+\newcommand{\NumEEighteenCovLI}{\pending{E18 cov.\ laser/iPad}}
+\newcommand{\NumEEighteenCovII}{\pending{E18 cov.\ iPad/iPad}}
+% Sensor-error envelope (to run, CPU only). [pending]
+\newcommand{\NumEnvTruthCov}{\pending{envelope truth cov.}}
+\newcommand{\NumEnvISGain}{\pending{envelope IS gain vs \mDistBoth}}
+\newcommand{\NumEnvAlphaS}{\pending{$\alpha_s$}}
+\newcommand{\NumEnvAlphaE}{\pending{$\alpha_e$}}
+
+%% ---------- E19: OMNI-DC centre on ARKitScenes (DONE, 3 seeds; exploratory) ----------
+% results_omnidc/e19_summary_3seeds.csv: seeds 0-2 (visit splits), probe draw 0, k = 200 (180 structured + 20
+% probes), alpha = 0.1, gamma = 0.5, UniDepthV2-L frozen; OMNI-DC v1.1 fed RGB + the 180 structured anchors.
+% Table cells: \ENineteen{...} in the generated block below; derived text numbers: \NumOmni*, \NumCluster*, ...
+\newcommand{\NumOmniSeeds}{3}
+\newcommand{\NumOmniTestLo}{1{,}909}
+\newcommand{\NumOmniTestHi}{1{,}945}
+% Smoke test (8 images, NOT for the paper): AbsRel on unseen pixels ~0.6 % (180 uniform laser anchors),
+% ~2.0 % (iPad anchors), ~4.3 % (clustered anchors). Full-set accuracy not yet computed. [pending]
+\newcommand{\NumOmniAbsRelUniform}{\pending{OMNI-DC AbsRel, uniform}}
+\newcommand{\NumOmniAbsRelCluster}{\pending{OMNI-DC AbsRel, cluster}}
+
+%% ---------- Probe ablation n in {10, 40} (UPD 9.22 Finding 4) ----------
+% A-dual median relative width, k = 50 / 200 (mean over pairs and layouts). [prelim]
+\newcommand{\NumWDualTenFifty}{\prelim{0.202}}
+\newcommand{\NumWDualTenTwoHundred}{\prelim{0.178}}
+\newcommand{\NumWDualFortyFifty}{\prelim{0.199}}
+\newcommand{\NumWDualFortyTwoHundred}{\prelim{0.154}}
+% A-dual short share with 40 probes (two-draw mean), range over k. [prelim]
+\newcommand{\NumShortFortyLo}{\prelim{6.5}}
+\newcommand{\NumShortFortyHi}{\prelim{6.8}}
+
+%% ---------- Table lookups (values in the generated block) ----------
+\newcommand{\ESeventeen}[3]{\ifcsname e17/#1/#2/#3\endcsname\prelim{\csname e17/#1/#2/#3\endcsname}\else\pending{?}\fi}
+\newcommand{\ENineteen}[6]{\ifcsname e19/#1/#2/#3/#4/#5/#6\endcsname\prelim{\csname e19/#1/#2/#3/#4/#5/#6\endcsname}\else\pending{?}\fi}
+
+%% ---------- Confirmatory protocol (design, final) ----------
+\newcommand{\NumReplSplits}{20}
+\newcommand{\NumProbeDraws}{10}
+
+%% >>> GENERATED by tools/gen_numbers.py -- do not edit by hand
+%% E17 (Tab. 2): \ESeventeen{layout}{k}{col}; col in local, dual, short, dW, bW, bIS.
+%% local/dual = image-averaged coverage of A-local (all k structured anchors) / A-dual; short = % images
+%% with single-draw coverage < 0.85, A-dual (pending until frac_img_short exists); dW/bW = % change in
+%% median rel. width of A-dual / A-dual-both vs A-dist-both; bIS = % change in rel. interval score
+%% (primary if available), A-dual-both vs A-dist-both. Median over the six pairs; lo / hi = min / max.
+\expandafter\def\csname e17/uniform/50/local\endcsname{0.922}
+\expandafter\def\csname e17/uniform/50/locallo\endcsname{0.922}
+\expandafter\def\csname e17/uniform/50/localhi\endcsname{0.924}
+\expandafter\def\csname e17/uniform/50/dual\endcsname{0.905}
+\expandafter\def\csname e17/uniform/50/duallo\endcsname{0.904}
+\expandafter\def\csname e17/uniform/50/dualhi\endcsname{0.907}
+\expandafter\def\csname e17/uniform/50/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/uniform/50/shortlo\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/uniform/50/shorthi\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/uniform/50/dW\endcsname{$-$48}
+\expandafter\def\csname e17/uniform/50/dWlo\endcsname{$-$52}
+\expandafter\def\csname e17/uniform/50/dWhi\endcsname{$-$45}
+\expandafter\def\csname e17/uniform/50/bW\endcsname{$-$37}
+\expandafter\def\csname e17/uniform/50/bWlo\endcsname{$-$42}
+\expandafter\def\csname e17/uniform/50/bWhi\endcsname{$-$24}
+\expandafter\def\csname e17/uniform/50/bIS\endcsname{$-$28}
+\expandafter\def\csname e17/uniform/50/bISlo\endcsname{$-$30}
+\expandafter\def\csname e17/uniform/50/bIShi\endcsname{$-$20}
+\expandafter\def\csname e17/uniform/200/local\endcsname{0.901}
+\expandafter\def\csname e17/uniform/200/locallo\endcsname{0.901}
+\expandafter\def\csname e17/uniform/200/localhi\endcsname{0.902}
+\expandafter\def\csname e17/uniform/200/dual\endcsname{0.906}
+\expandafter\def\csname e17/uniform/200/duallo\endcsname{0.904}
+\expandafter\def\csname e17/uniform/200/dualhi\endcsname{0.907}
+\expandafter\def\csname e17/uniform/200/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/uniform/200/shortlo\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/uniform/200/shorthi\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/uniform/200/dW\endcsname{$-$69}
+\expandafter\def\csname e17/uniform/200/dWlo\endcsname{$-$71}
+\expandafter\def\csname e17/uniform/200/dWhi\endcsname{$-$61}
+\expandafter\def\csname e17/uniform/200/bW\endcsname{$-$60}
+\expandafter\def\csname e17/uniform/200/bWlo\endcsname{$-$67}
+\expandafter\def\csname e17/uniform/200/bWhi\endcsname{$-$46}
+\expandafter\def\csname e17/uniform/200/bIS\endcsname{$-$46}
+\expandafter\def\csname e17/uniform/200/bISlo\endcsname{$-$48}
+\expandafter\def\csname e17/uniform/200/bIShi\endcsname{$-$36}
+\expandafter\def\csname e17/rows/50/local\endcsname{0.899}
+\expandafter\def\csname e17/rows/50/locallo\endcsname{0.895}
+\expandafter\def\csname e17/rows/50/localhi\endcsname{0.901}
+\expandafter\def\csname e17/rows/50/dual\endcsname{0.905}
+\expandafter\def\csname e17/rows/50/duallo\endcsname{0.903}
+\expandafter\def\csname e17/rows/50/dualhi\endcsname{0.905}
+\expandafter\def\csname e17/rows/50/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/rows/50/shortlo\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/rows/50/shorthi\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/rows/50/dW\endcsname{$-$41}
+\expandafter\def\csname e17/rows/50/dWlo\endcsname{$-$45}
+\expandafter\def\csname e17/rows/50/dWhi\endcsname{$-$38}
+\expandafter\def\csname e17/rows/50/bW\endcsname{$-$30}
+\expandafter\def\csname e17/rows/50/bWlo\endcsname{$-$34}
+\expandafter\def\csname e17/rows/50/bWhi\endcsname{$-$20}
+\expandafter\def\csname e17/rows/50/bIS\endcsname{$-$24}
+\expandafter\def\csname e17/rows/50/bISlo\endcsname{$-$26}
+\expandafter\def\csname e17/rows/50/bIShi\endcsname{$-$18}
+\expandafter\def\csname e17/rows/200/local\endcsname{0.873}
+\expandafter\def\csname e17/rows/200/locallo\endcsname{0.870}
+\expandafter\def\csname e17/rows/200/localhi\endcsname{0.876}
+\expandafter\def\csname e17/rows/200/dual\endcsname{0.904}
+\expandafter\def\csname e17/rows/200/duallo\endcsname{0.902}
+\expandafter\def\csname e17/rows/200/dualhi\endcsname{0.905}
+\expandafter\def\csname e17/rows/200/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/rows/200/shortlo\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/rows/200/shorthi\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/rows/200/dW\endcsname{$-$53}
+\expandafter\def\csname e17/rows/200/dWlo\endcsname{$-$58}
+\expandafter\def\csname e17/rows/200/dWhi\endcsname{$-$48}
+\expandafter\def\csname e17/rows/200/bW\endcsname{$-$44}
+\expandafter\def\csname e17/rows/200/bWlo\endcsname{$-$47}
+\expandafter\def\csname e17/rows/200/bWhi\endcsname{$-$32}
+\expandafter\def\csname e17/rows/200/bIS\endcsname{$-$32}
+\expandafter\def\csname e17/rows/200/bISlo\endcsname{$-$35}
+\expandafter\def\csname e17/rows/200/bIShi\endcsname{$-$24}
+\expandafter\def\csname e17/cluster/50/local\endcsname{0.342}
+\expandafter\def\csname e17/cluster/50/locallo\endcsname{0.312}
+\expandafter\def\csname e17/cluster/50/localhi\endcsname{0.412}
+\expandafter\def\csname e17/cluster/50/dual\endcsname{0.906}
+\expandafter\def\csname e17/cluster/50/duallo\endcsname{0.905}
+\expandafter\def\csname e17/cluster/50/dualhi\endcsname{0.907}
+\expandafter\def\csname e17/cluster/50/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/cluster/50/shortlo\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/cluster/50/shorthi\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/cluster/50/dW\endcsname{$-$16}
+\expandafter\def\csname e17/cluster/50/dWlo\endcsname{$-$23}
+\expandafter\def\csname e17/cluster/50/dWhi\endcsname{$-$10}
+\expandafter\def\csname e17/cluster/50/bW\endcsname{$-$2}
+\expandafter\def\csname e17/cluster/50/bWlo\endcsname{$-$4}
+\expandafter\def\csname e17/cluster/50/bWhi\endcsname{0}
+\expandafter\def\csname e17/cluster/50/bIS\endcsname{$-$1}
+\expandafter\def\csname e17/cluster/50/bISlo\endcsname{$-$10}
+\expandafter\def\csname e17/cluster/50/bIShi\endcsname{$-$1}
+\expandafter\def\csname e17/cluster/200/local\endcsname{0.397}
+\expandafter\def\csname e17/cluster/200/locallo\endcsname{0.366}
+\expandafter\def\csname e17/cluster/200/localhi\endcsname{0.463}
+\expandafter\def\csname e17/cluster/200/dual\endcsname{0.905}
+\expandafter\def\csname e17/cluster/200/duallo\endcsname{0.903}
+\expandafter\def\csname e17/cluster/200/dualhi\endcsname{0.905}
+\expandafter\def\csname e17/cluster/200/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/cluster/200/shortlo\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/cluster/200/shorthi\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/cluster/200/dW\endcsname{$-$17}
+\expandafter\def\csname e17/cluster/200/dWlo\endcsname{$-$24}
+\expandafter\def\csname e17/cluster/200/dWhi\endcsname{$-$11}
+\expandafter\def\csname e17/cluster/200/bW\endcsname{$-$3}
+\expandafter\def\csname e17/cluster/200/bWlo\endcsname{$-$6}
+\expandafter\def\csname e17/cluster/200/bWhi\endcsname{$-$0}
+\expandafter\def\csname e17/cluster/200/bIS\endcsname{$-$4}
+\expandafter\def\csname e17/cluster/200/bISlo\endcsname{$-$11}
+\expandafter\def\csname e17/cluster/200/bIShi\endcsname{$-$1}
+\expandafter\def\csname e17/edges/50/local\endcsname{0.960}
+\expandafter\def\csname e17/edges/50/locallo\endcsname{0.939}
+\expandafter\def\csname e17/edges/50/localhi\endcsname{0.967}
+\expandafter\def\csname e17/edges/50/dual\endcsname{0.905}
+\expandafter\def\csname e17/edges/50/duallo\endcsname{0.904}
+\expandafter\def\csname e17/edges/50/dualhi\endcsname{0.906}
+\expandafter\def\csname e17/edges/50/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/edges/50/shortlo\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/edges/50/shorthi\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/edges/50/dW\endcsname{$-$24}
+\expandafter\def\csname e17/edges/50/dWlo\endcsname{$-$27}
+\expandafter\def\csname e17/edges/50/dWhi\endcsname{$-$13}
+\expandafter\def\csname e17/edges/50/bW\endcsname{$-$12}
+\expandafter\def\csname e17/edges/50/bWlo\endcsname{$-$16}
+\expandafter\def\csname e17/edges/50/bWhi\endcsname{$-$3}
+\expandafter\def\csname e17/edges/50/bIS\endcsname{$-$15}
+\expandafter\def\csname e17/edges/50/bISlo\endcsname{$-$16}
+\expandafter\def\csname e17/edges/50/bIShi\endcsname{$-$6}
+\expandafter\def\csname e17/edges/200/local\endcsname{0.948}
+\expandafter\def\csname e17/edges/200/locallo\endcsname{0.922}
+\expandafter\def\csname e17/edges/200/localhi\endcsname{0.960}
+\expandafter\def\csname e17/edges/200/dual\endcsname{0.905}
+\expandafter\def\csname e17/edges/200/duallo\endcsname{0.903}
+\expandafter\def\csname e17/edges/200/dualhi\endcsname{0.905}
+\expandafter\def\csname e17/edges/200/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/edges/200/shortlo\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/edges/200/shorthi\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/edges/200/dW\endcsname{$-$34}
+\expandafter\def\csname e17/edges/200/dWlo\endcsname{$-$36}
+\expandafter\def\csname e17/edges/200/dWhi\endcsname{$-$31}
+\expandafter\def\csname e17/edges/200/bW\endcsname{$-$23}
+\expandafter\def\csname e17/edges/200/bWlo\endcsname{$-$28}
+\expandafter\def\csname e17/edges/200/bWhi\endcsname{$-$14}
+\expandafter\def\csname e17/edges/200/bIS\endcsname{$-$18}
+\expandafter\def\csname e17/edges/200/bISlo\endcsname{$-$25}
+\expandafter\def\csname e17/edges/200/bIShi\endcsname{$-$17}
+\expandafter\def\csname e17/near/50/local\endcsname{0.769}
+\expandafter\def\csname e17/near/50/locallo\endcsname{0.754}
+\expandafter\def\csname e17/near/50/localhi\endcsname{0.799}
+\expandafter\def\csname e17/near/50/dual\endcsname{0.905}
+\expandafter\def\csname e17/near/50/duallo\endcsname{0.904}
+\expandafter\def\csname e17/near/50/dualhi\endcsname{0.906}
+\expandafter\def\csname e17/near/50/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/near/50/shortlo\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/near/50/shorthi\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/near/50/dW\endcsname{$-$33}
+\expandafter\def\csname e17/near/50/dWlo\endcsname{$-$46}
+\expandafter\def\csname e17/near/50/dWhi\endcsname{$-$19}
+\expandafter\def\csname e17/near/50/bW\endcsname{$-$18}
+\expandafter\def\csname e17/near/50/bWlo\endcsname{$-$30}
+\expandafter\def\csname e17/near/50/bWhi\endcsname{$-$11}
+\expandafter\def\csname e17/near/50/bIS\endcsname{$-$18}
+\expandafter\def\csname e17/near/50/bISlo\endcsname{$-$23}
+\expandafter\def\csname e17/near/50/bIShi\endcsname{$-$14}
+\expandafter\def\csname e17/near/200/local\endcsname{0.728}
+\expandafter\def\csname e17/near/200/locallo\endcsname{0.712}
+\expandafter\def\csname e17/near/200/localhi\endcsname{0.759}
+\expandafter\def\csname e17/near/200/dual\endcsname{0.905}
+\expandafter\def\csname e17/near/200/duallo\endcsname{0.903}
+\expandafter\def\csname e17/near/200/dualhi\endcsname{0.906}
+\expandafter\def\csname e17/near/200/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/near/200/shortlo\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/near/200/shorthi\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e17/near/200/dW\endcsname{$-$37}
+\expandafter\def\csname e17/near/200/dWlo\endcsname{$-$52}
+\expandafter\def\csname e17/near/200/dWhi\endcsname{$-$20}
+\expandafter\def\csname e17/near/200/bW\endcsname{$-$22}
+\expandafter\def\csname e17/near/200/bWlo\endcsname{$-$38}
+\expandafter\def\csname e17/near/200/bWhi\endcsname{$-$12}
+\expandafter\def\csname e17/near/200/bIS\endcsname{$-$20}
+\expandafter\def\csname e17/near/200/bISlo\endcsname{$-$27}
+\expandafter\def\csname e17/near/200/bIShi\endcsname{$-$13}
+%% true while any E17 short cell is pending (Supp. ranges table then prints one marker, not [lo, hi])
+\newif\ifESeventeenShortPending
+\ESeventeenShortPendingtrue
+
+%% E17 single-draw short share of A-dual (% images < 0.85, macro includes \%), range over pairs, layouts and k;
+%% \pending{confirmatory} until the summaries carry frac_img_short (theory: 17.6 % at n = 20, 13.0 % at n = 40).
+\newcommand{\NumESeventeenShort}{\pending{confirmatory}}
+\newcommand{\NumESeventeenShortForty}{\pending{confirmatory}}
+\newcommand{\NumArkShortOne}{\pending{confirmatory}}
+
+%% E19 (Tab. 3, Supp.): \ENineteen{pattern}{centre}{anchor src}{probe src}{method}{col};
+%% col in cov (truth coverage, image mean), ptten (p10 of per-image coverage, one draw), short (% images
+%% < 0.85, one draw), wgt (median width / laser depth), is (rel. interval score: primary if the column
+%% exists, else exploratory; then > 5.0 is a blow-up from a few pixels -> \pending),
+%% uninf (% pixels with width > 10 y, only if frac_uninformative exists).
+%% exploratory (seeds 0-2; not in the confirmatory E19c): cluster/omnidc/lidar/clean/A-dist-split, cluster/omnidc/lidar/clean/A-dual, cluster/omnidc/lidar/clean/A-dual-both, cluster/omnidc/lidar/clean/split-CP, cluster/omnidc/lidar/lidar/A-dist-split, cluster/omnidc/lidar/lidar/A-dual, cluster/omnidc/lidar/lidar/A-dual-both, cluster/omnidc/lidar/lidar/split-CP, uniform/omnidc/lidar/clean/A-dist-split, uniform/omnidc/lidar/clean/A-dual, uniform/omnidc/lidar/clean/A-dual-both, uniform/omnidc/lidar/clean/split-CP, uniform/omnidc/lidar/lidar/A-dist-split, uniform/omnidc/lidar/lidar/A-dual, uniform/omnidc/lidar/lidar/A-dual-both, uniform/omnidc/lidar/lidar/split-CP
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/A-dist-split/cov\endcsname{0.924}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/A-dist-split/ptten\endcsname{0.757}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/A-dist-split/short\endcsname{16.7}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/A-dist-split/wgt\endcsname{0.391}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/A-dist-split/is\endcsname{0.422}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/A-dist-split/uninf\endcsname{0.2}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/A-dual/cov\endcsname{0.905}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/A-dual/ptten\endcsname{0.820}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/A-dual/short\endcsname{17.4}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/A-dual/wgt\endcsname{0.226}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/A-dual/is\endcsname{0.311}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/A-dual/uninf\endcsname{0.0}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/A-dual-both/cov\endcsname{0.971}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/A-dual-both/ptten\endcsname{0.917}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/A-dual-both/short\endcsname{2.2}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/A-dual-both/wgt\endcsname{0.403}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/A-dual-both/is\endcsname{0.421}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/A-dual-both/uninf\endcsname{0.2}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/split-CP/cov\endcsname{0.895}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/split-CP/ptten\endcsname{0.676}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/split-CP/short\endcsname{23.7}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/split-CP/wgt\endcsname{0.336}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/split-CP/is\endcsname{0.374}
+\expandafter\def\csname e19/cluster/omnidc/clean/clean/split-CP/uninf\endcsname{0.0}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/A-dist-split/cov\endcsname{0.924}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/A-dist-split/ptten\endcsname{0.757}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/A-dist-split/short\endcsname{16.7}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/A-dist-split/wgt\endcsname{0.391}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/A-dist-split/is\endcsname{0.422}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/A-dist-split/uninf\endcsname{0.2}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/A-dual/cov\endcsname{0.915}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/A-dual/ptten\endcsname{0.807}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/A-dual/short\endcsname{17.4}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/A-dual/wgt\endcsname{0.241}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/A-dual/is\endcsname{0.322}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/A-dual/uninf\endcsname{0.0}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/A-dual-both/cov\endcsname{0.971}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/A-dual-both/ptten\endcsname{0.912}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/A-dual-both/short\endcsname{3.1}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/A-dual-both/wgt\endcsname{0.403}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/A-dual-both/is\endcsname{0.423}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/A-dual-both/uninf\endcsname{0.2}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/split-CP/cov\endcsname{0.895}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/split-CP/ptten\endcsname{0.676}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/split-CP/short\endcsname{23.7}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/split-CP/wgt\endcsname{0.336}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/split-CP/is\endcsname{0.374}
+\expandafter\def\csname e19/cluster/omnidc/clean/lidar/split-CP/uninf\endcsname{0.0}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/A-dist-split/cov\endcsname{0.922}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/A-dist-split/ptten\endcsname{0.747}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/A-dist-split/short\endcsname{17.2}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/A-dist-split/wgt\endcsname{0.391}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/A-dist-split/is\endcsname{0.589}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/A-dist-split/uninf\endcsname{--}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/A-dual/cov\endcsname{0.905}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/A-dual/ptten\endcsname{0.820}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/A-dual/short\endcsname{17.2}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/A-dual/wgt\endcsname{0.233}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/A-dual/is\endcsname{\pending{primary IS}} % mean 8.75e+03: blow-up
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/A-dual/uninf\endcsname{--}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/A-dual-both/cov\endcsname{0.971}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/A-dual-both/ptten\endcsname{0.918}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/A-dual-both/short\endcsname{2.2}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/A-dual-both/wgt\endcsname{0.404}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/A-dual-both/is\endcsname{\pending{primary IS}} % mean 8.75e+03: blow-up
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/A-dual-both/uninf\endcsname{--}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/split-CP/cov\endcsname{0.894}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/split-CP/ptten\endcsname{0.665}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/split-CP/short\endcsname{24.3}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/split-CP/wgt\endcsname{0.336}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/split-CP/is\endcsname{0.581}
+\expandafter\def\csname e19/cluster/omnidc/lidar/clean/split-CP/uninf\endcsname{--}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/A-dist-split/cov\endcsname{0.922}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/A-dist-split/ptten\endcsname{0.747}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/A-dist-split/short\endcsname{17.2}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/A-dist-split/wgt\endcsname{0.391}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/A-dist-split/is\endcsname{0.589}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/A-dist-split/uninf\endcsname{--}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/A-dual/cov\endcsname{0.881}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/A-dual/ptten\endcsname{0.737}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/A-dual/short\endcsname{29.7}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/A-dual/wgt\endcsname{0.227}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/A-dual/is\endcsname{\pending{primary IS}} % mean 1e+04: blow-up
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/A-dual/uninf\endcsname{--}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/A-dual-both/cov\endcsname{0.968}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/A-dual-both/ptten\endcsname{0.904}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/A-dual-both/short\endcsname{3.9}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/A-dual-both/wgt\endcsname{0.403}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/A-dual-both/is\endcsname{\pending{primary IS}} % mean 1e+04: blow-up
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/A-dual-both/uninf\endcsname{--}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/split-CP/cov\endcsname{0.894}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/split-CP/ptten\endcsname{0.665}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/split-CP/short\endcsname{24.3}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/split-CP/wgt\endcsname{0.336}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/split-CP/is\endcsname{0.581}
+\expandafter\def\csname e19/cluster/omnidc/lidar/lidar/split-CP/uninf\endcsname{--}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/A-dist-split/cov\endcsname{0.924}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/A-dist-split/ptten\endcsname{0.837}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/A-dist-split/short\endcsname{12.5}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/A-dist-split/wgt\endcsname{0.071}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/A-dist-split/is\endcsname{0.135}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/A-dist-split/uninf\endcsname{0.0}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/A-dual/cov\endcsname{0.905}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/A-dual/ptten\endcsname{0.819}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/A-dual/short\endcsname{17.6}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/A-dual/wgt\endcsname{0.109}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/A-dual/is\endcsname{0.182}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/A-dual/uninf\endcsname{0.0}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/A-dual-both/cov\endcsname{0.967}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/A-dual-both/ptten\endcsname{0.930}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/A-dual-both/short\endcsname{0.5}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/A-dual-both/wgt\endcsname{0.126}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/A-dual-both/is\endcsname{0.174}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/A-dual-both/uninf\endcsname{0.0}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/split-CP/cov\endcsname{0.897}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/split-CP/ptten\endcsname{0.595}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/split-CP/short\endcsname{14.6}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/split-CP/wgt\endcsname{0.513}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/split-CP/is\endcsname{0.529}
+\expandafter\def\csname e19/cluster/unidepth/clean/clean/split-CP/uninf\endcsname{0.0}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/A-dist-split/cov\endcsname{0.925}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/A-dist-split/ptten\endcsname{0.840}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/A-dist-split/short\endcsname{12.0}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/A-dist-split/wgt\endcsname{0.090}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/A-dist-split/is\endcsname{0.152}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/A-dist-split/uninf\endcsname{0.0}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/A-dual/cov\endcsname{0.927}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/A-dual/ptten\endcsname{0.823}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/A-dual/short\endcsname{13.3}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/A-dual/wgt\endcsname{0.131}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/A-dual/is\endcsname{0.197}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/A-dual/uninf\endcsname{0.0}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/A-dual-both/cov\endcsname{0.971}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/A-dual-both/ptten\endcsname{0.932}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/A-dual-both/short\endcsname{0.9}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/A-dual-both/wgt\endcsname{0.148}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/A-dual-both/is\endcsname{0.193}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/A-dual-both/uninf\endcsname{0.0}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/split-CP/cov\endcsname{0.897}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/split-CP/ptten\endcsname{0.595}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/split-CP/short\endcsname{14.6}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/split-CP/wgt\endcsname{0.513}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/split-CP/is\endcsname{0.529}
+\expandafter\def\csname e19/cluster/unidepth/clean/lidar/split-CP/uninf\endcsname{0.0}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/A-dist-split/cov\endcsname{0.942}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/A-dist-split/ptten\endcsname{0.868}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/A-dist-split/short\endcsname{7.0}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/A-dist-split/wgt\endcsname{0.098}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/A-dist-split/is\endcsname{0.152}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/A-dist-split/uninf\endcsname{0.0}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/A-dual/cov\endcsname{0.906}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/A-dual/ptten\endcsname{0.820}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/A-dual/short\endcsname{17.5}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/A-dual/wgt\endcsname{0.123}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/A-dual/is\endcsname{0.191}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/A-dual/uninf\endcsname{0.0}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/A-dual-both/cov\endcsname{0.972}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/A-dual-both/ptten\endcsname{0.938}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/A-dual-both/short\endcsname{0.3}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/A-dual-both/wgt\endcsname{0.146}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/A-dual-both/is\endcsname{0.188}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/A-dual-both/uninf\endcsname{0.0}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/split-CP/cov\endcsname{0.897}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/split-CP/ptten\endcsname{0.595}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/split-CP/short\endcsname{14.6}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/split-CP/wgt\endcsname{0.513}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/split-CP/is\endcsname{0.529}
+\expandafter\def\csname e19/cluster/unidepth/lidar/clean/split-CP/uninf\endcsname{0.0}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/A-dist-split/cov\endcsname{0.866}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/A-dist-split/ptten\endcsname{0.746}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/A-dist-split/short\endcsname{33.0}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/A-dist-split/wgt\endcsname{0.081}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/A-dist-split/is\endcsname{0.157}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/A-dist-split/uninf\endcsname{0.0}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/A-dual/cov\endcsname{0.848}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/A-dual/ptten\endcsname{0.623}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/A-dual/short\endcsname{33.6}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/A-dual/wgt\endcsname{0.119}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/A-dual/is\endcsname{0.209}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/A-dual/uninf\endcsname{0.0}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/A-dual-both/cov\endcsname{0.946}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/A-dual-both/ptten\endcsname{0.882}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/A-dual-both/short\endcsname{6.0}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/A-dual-both/wgt\endcsname{0.137}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/A-dual-both/is\endcsname{0.189}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/A-dual-both/uninf\endcsname{0.0}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/split-CP/cov\endcsname{0.897}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/split-CP/ptten\endcsname{0.595}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/split-CP/short\endcsname{14.6}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/split-CP/wgt\endcsname{0.513}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/split-CP/is\endcsname{0.529}
+\expandafter\def\csname e19/cluster/unidepth/lidar/lidar/split-CP/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/A-dist-split/cov\endcsname{0.923}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/A-dist-split/ptten\endcsname{0.850}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/A-dist-split/short\endcsname{9.9}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/A-dist-split/wgt\endcsname{0.026}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/A-dist-split/is\endcsname{0.071}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/A-dist-split/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/A-dual/cov\endcsname{0.904}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/A-dual/ptten\endcsname{0.819}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/A-dual/short\endcsname{17.8}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/A-dual/wgt\endcsname{0.023}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/A-dual/is\endcsname{0.074}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/A-dual/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/A-dual-both/cov\endcsname{0.948}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/A-dual-both/ptten\endcsname{0.902}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/A-dual-both/short\endcsname{1.3}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/A-dual-both/wgt\endcsname{0.032}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/A-dual-both/is\endcsname{0.074}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/A-dual-both/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/split-CP/cov\endcsname{0.897}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/split-CP/ptten\endcsname{0.813}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/split-CP/short\endcsname{20.7}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/split-CP/wgt\endcsname{0.024}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/split-CP/is\endcsname{0.073}
+\expandafter\def\csname e19/uniform/omnidc/clean/clean/split-CP/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/A-dist-split/cov\endcsname{0.923}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/A-dist-split/ptten\endcsname{0.851}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/A-dist-split/short\endcsname{9.9}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/A-dist-split/wgt\endcsname{0.026}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/A-dist-split/is\endcsname{0.071}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/A-dist-split/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/A-dual/cov\endcsname{0.980}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/A-dual/ptten\endcsname{0.956}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/A-dual/short\endcsname{0.0}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/A-dual/wgt\endcsname{0.075}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/A-dual/is\endcsname{0.108}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/A-dual/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/A-dual-both/cov\endcsname{0.980}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/A-dual-both/ptten\endcsname{0.957}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/A-dual-both/short\endcsname{0.0}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/A-dual-both/wgt\endcsname{0.075}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/A-dual-both/is\endcsname{0.108}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/A-dual-both/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/split-CP/cov\endcsname{0.897}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/split-CP/ptten\endcsname{0.813}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/split-CP/short\endcsname{20.7}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/split-CP/wgt\endcsname{0.024}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/split-CP/is\endcsname{0.073}
+\expandafter\def\csname e19/uniform/omnidc/clean/lidar/split-CP/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/A-dist-split/cov\endcsname{0.545}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/A-dist-split/ptten\endcsname{0.330}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/A-dist-split/short\endcsname{97.9}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/A-dist-split/wgt\endcsname{0.036}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/A-dist-split/is\endcsname{0.199}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/A-dist-split/uninf\endcsname{--}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/A-dual/cov\endcsname{0.905}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/A-dual/ptten\endcsname{0.817}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/A-dual/short\endcsname{18.4}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/A-dual/wgt\endcsname{0.071}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/A-dual/is\endcsname{0.150}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/A-dual/uninf\endcsname{--}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/A-dual-both/cov\endcsname{0.907}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/A-dual-both/ptten\endcsname{0.822}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/A-dual-both/short\endcsname{17.1}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/A-dual-both/wgt\endcsname{0.072}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/A-dual-both/is\endcsname{0.150}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/A-dual-both/uninf\endcsname{--}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/split-CP/cov\endcsname{0.897}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/split-CP/ptten\endcsname{0.793}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/split-CP/short\endcsname{18.0}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/split-CP/wgt\endcsname{0.070}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/split-CP/is\endcsname{0.147}
+\expandafter\def\csname e19/uniform/omnidc/lidar/clean/split-CP/uninf\endcsname{--}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/A-dist-split/cov\endcsname{0.539}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/A-dist-split/ptten\endcsname{0.323}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/A-dist-split/short\endcsname{98.0}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/A-dist-split/wgt\endcsname{0.035}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/A-dist-split/is\endcsname{0.200}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/A-dist-split/uninf\endcsname{--}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/A-dual/cov\endcsname{0.486}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/A-dual/ptten\endcsname{0.054}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/A-dual/short\endcsname{81.6}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/A-dual/wgt\endcsname{0.029}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/A-dual/is\endcsname{0.228}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/A-dual/uninf\endcsname{--}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/A-dual-both/cov\endcsname{0.649}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/A-dual-both/ptten\endcsname{0.370}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/A-dual-both/short\endcsname{79.7}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/A-dual-both/wgt\endcsname{0.041}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/A-dual-both/is\endcsname{0.184}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/A-dual-both/uninf\endcsname{--}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/split-CP/cov\endcsname{0.897}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/split-CP/ptten\endcsname{0.793}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/split-CP/short\endcsname{18.0}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/split-CP/wgt\endcsname{0.070}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/split-CP/is\endcsname{0.147}
+\expandafter\def\csname e19/uniform/omnidc/lidar/lidar/split-CP/uninf\endcsname{--}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/A-dist-split/cov\endcsname{0.923}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/A-dist-split/ptten\endcsname{0.860}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/A-dist-split/short\endcsname{7.6}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/A-dist-split/wgt\endcsname{0.027}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/A-dist-split/is\endcsname{0.082}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/A-dist-split/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/A-dual/cov\endcsname{0.904}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/A-dual/ptten\endcsname{0.818}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/A-dual/short\endcsname{17.7}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/A-dual/wgt\endcsname{0.030}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/A-dual/is\endcsname{0.089}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/A-dual/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/A-dual-both/cov\endcsname{0.949}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/A-dual-both/ptten\endcsname{0.905}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/A-dual-both/short\endcsname{0.8}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/A-dual-both/wgt\endcsname{0.038}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/A-dual-both/is\endcsname{0.087}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/A-dual-both/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/split-CP/cov\endcsname{0.897}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/split-CP/ptten\endcsname{0.594}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/split-CP/short\endcsname{14.5}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/split-CP/wgt\endcsname{0.513}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/split-CP/is\endcsname{0.528}
+\expandafter\def\csname e19/uniform/unidepth/clean/clean/split-CP/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/A-dist-split/cov\endcsname{0.924}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/A-dist-split/ptten\endcsname{0.864}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/A-dist-split/short\endcsname{6.4}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/A-dist-split/wgt\endcsname{0.030}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/A-dist-split/is\endcsname{0.083}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/A-dist-split/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/A-dual/cov\endcsname{0.973}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/A-dual/ptten\endcsname{0.942}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/A-dual/short\endcsname{0.1}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/A-dual/wgt\endcsname{0.074}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/A-dual/is\endcsname{0.112}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/A-dual/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/A-dual-both/cov\endcsname{0.975}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/A-dual-both/ptten\endcsname{0.946}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/A-dual-both/short\endcsname{0.0}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/A-dual-both/wgt\endcsname{0.074}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/A-dual-both/is\endcsname{0.113}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/A-dual-both/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/split-CP/cov\endcsname{0.897}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/split-CP/ptten\endcsname{0.594}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/split-CP/short\endcsname{14.5}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/split-CP/wgt\endcsname{0.513}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/split-CP/is\endcsname{0.528}
+\expandafter\def\csname e19/uniform/unidepth/clean/lidar/split-CP/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/A-dist-split/cov\endcsname{0.616}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/A-dist-split/ptten\endcsname{0.390}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/A-dist-split/short\endcsname{93.7}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/A-dist-split/wgt\endcsname{0.035}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/A-dist-split/is\endcsname{0.144}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/A-dist-split/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/A-dual/cov\endcsname{0.904}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/A-dual/ptten\endcsname{0.818}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/A-dual/short\endcsname{17.9}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/A-dual/wgt\endcsname{0.066}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/A-dual/is\endcsname{0.121}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/A-dual/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/A-dual-both/cov\endcsname{0.912}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/A-dual-both/ptten\endcsname{0.836}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/A-dual-both/short\endcsname{13.4}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/A-dual-both/wgt\endcsname{0.068}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/A-dual-both/is\endcsname{0.120}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/A-dual-both/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/split-CP/cov\endcsname{0.897}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/split-CP/ptten\endcsname{0.594}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/split-CP/short\endcsname{14.5}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/split-CP/wgt\endcsname{0.513}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/split-CP/is\endcsname{0.528}
+\expandafter\def\csname e19/uniform/unidepth/lidar/clean/split-CP/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/A-dist-split/cov\endcsname{0.527}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/A-dist-split/ptten\endcsname{0.284}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/A-dist-split/short\endcsname{97.0}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/A-dist-split/wgt\endcsname{0.033}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/A-dist-split/is\endcsname{0.168}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/A-dist-split/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/A-dual/cov\endcsname{0.565}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/A-dual/ptten\endcsname{0.108}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/A-dual/short\endcsname{73.8}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/A-dual/wgt\endcsname{0.036}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/A-dual/is\endcsname{0.174}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/A-dual/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/A-dual-both/cov\endcsname{0.666}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/A-dual-both/ptten\endcsname{0.326}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/A-dual-both/short\endcsname{70.2}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/A-dual-both/wgt\endcsname{0.045}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/A-dual-both/is\endcsname{0.150}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/A-dual-both/uninf\endcsname{0.0}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/split-CP/cov\endcsname{0.897}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/split-CP/ptten\endcsname{0.594}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/split-CP/short\endcsname{14.5}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/split-CP/wgt\endcsname{0.513}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/split-CP/is\endcsname{0.528}
+\expandafter\def\csname e19/uniform/unidepth/lidar/lidar/split-CP/uninf\endcsname{0.0}
+%% true when the E19 summary carries frac_uninformative (Supp. Tab. S2 then shows an Uninf. column)
+\newif\ifENineteenUninf
+\ENineteenUninftrue
+%% Per-seed mean-over-images rel. IS of the blow-up cells -- NOT for the paper (primary IS is the image median):
+%%   cluster/omnidc/clean/clean/A-dist-split: 0.591 / 0.56 / 2.98e+15 / 4.9e+21 / 5.76e+28 / 1.32e+12 / 0.584 / 5.57e+28 / 1.14e+11 / 2.98e+10
+%%   cluster/omnidc/clean/clean/A-dual: 0.387 / 0.38 / 0.389 / 0.384 / 0.381 / 0.391 / 0.382 / 0.395 / 0.771 / 2.5e+21
+%%   cluster/omnidc/clean/clean/A-dual-both: 0.505 / 0.502 / 2.98e+15 / 4.9e+21 / 5.76e+28 / 1.32e+12 / 0.506 / 5.57e+28 / 1.14e+11 / 2.5e+21
+%%   cluster/omnidc/clean/lidar/A-dist-split: 0.591 / 0.56 / 8.97e+15 / 4.9e+21 / 2.01e+29 / 1.21e+12 / 0.584 / 9.25e+28 / 1.14e+11 / 2.91e+10
+%%   cluster/omnidc/clean/lidar/A-dual: 0.4 / 0.393 / 0.402 / 0.396 / 0.393 / 0.403 / 0.393 / 0.408 / 0.643 / 5.62e+20
+%%   cluster/omnidc/clean/lidar/A-dual-both: 0.511 / 0.507 / 8.97e+15 / 4.9e+21 / 2.01e+29 / 1.21e+12 / 0.509 / 9.25e+28 / 1.14e+11 / 5.62e+20
+
+%% E19 derived numbers for the text (uniform/cluster, k = 200, laser anchors and probes unless stated).
+% OMNI-DC centres (split-CP / A-dual / A-dist-split) vs UniDepthV2 A-dual, uniform: rel. IS lower by 18.1, 16.1, 20.2 %
+\newcommand{\NumOmniGainLo}{16}
+\newcommand{\NumOmniGainHi}{20}
+% A-dual on OMNI-DC vs split-CP on OMNI-DC, uniform: rel. IS +2.5 %
+\newcommand{\NumOmniDualCost}{2.5}
+% cluster: UniDepthV2 A-dual vs OMNI-DC A-dual / split-CP: rel. IS lower by 41.4 / 51.4 %
+\newcommand{\NumClusterGainDual}{41}
+\newcommand{\NumClusterGainCP}{51}
+% raw UniDepthV2 split-CP (no anchors) rel. IS 0.528 = 6.0--7.5 x the anchored methods (uniform)
+\newcommand{\NumRawRatioLo}{6}
+\newcommand{\NumRawRatioHi}{7}
+% A-dual p10 / short share, clean/clean, 4 cells (theory 0.819 / 17.6 %)
+\newcommand{\NumENineteenPTenLo}{0.818}
+\newcommand{\NumENineteenPTenHi}{0.820}
+\newcommand{\NumENineteenShortLo}{17.4}
+\newcommand{\NumENineteenShortHi}{17.8}
+% iPad anchors, laser probes, uniform: A-dual truth coverage (UniDepthV2, OMNI-DC); A-dist-split (both probe sources)
+\newcommand{\NumIpadAnchorDualLo}{\prelim{0.904}}
+\newcommand{\NumIpadAnchorDualHi}{\prelim{0.905}}
+\newcommand{\NumIpadAnchorDistLo}{\prelim{0.53}}
+\newcommand{\NumIpadAnchorDistHi}{\prelim{0.62}}
+% laser anchors, iPad probes, uniform: A-dual truth coverage, and width factor vs laser probes
+\newcommand{\NumLaserIpadDualLo}{0.973}
+\newcommand{\NumLaserIpadDualHi}{0.980}
+\newcommand{\NumLaserIpadWidenLo}{2.5}
+\newcommand{\NumLaserIpadWidenHi}{3.3}
+
+%% E18 (Tab. 3b, Supp.): \EEighteen{pattern}{model}{anchor src}{probe src}{method}{col}; model in unidepth,
+%% dav2; src in clean (laser), lidar (iPad); col in cov (truth coverage, image mean), ptten (p10, one draw),
+%% short (% images < 0.85, one draw; pending until frac_img_short exists), w (median width / prediction),
+%% is (rel. IS, primary if the column exists).
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-dist-both/cov\endcsname{0.977}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-dist-both/ptten\endcsname{0.943}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-dist-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-dist-both/w\endcsname{0.152}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-dist-both/is\endcsname{0.343}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-dist-split/cov\endcsname{0.924}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-dist-split/ptten\endcsname{0.837}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-dist-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-dist-split/w\endcsname{0.071}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-dist-split/is\endcsname{0.220}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-dual/cov\endcsname{0.905}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-dual/ptten\endcsname{0.819}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-dual/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-dual/w\endcsname{0.126}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-dual/is\endcsname{0.347}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-dual-both/cov\endcsname{0.970}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-dual-both/ptten\endcsname{0.932}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-dual-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-dual-both/w\endcsname{0.142}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-dual-both/is\endcsname{0.331}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-local-split/cov\endcsname{0.909}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-local-split/ptten\endcsname{0.794}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-local-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-local-split/w\endcsname{0.136}
+\expandafter\def\csname e18/cluster/dav2/clean/clean/A-local-split/is\endcsname{0.365}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-dist-both/cov\endcsname{0.975}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-dist-both/ptten\endcsname{0.938}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-dist-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-dist-both/w\endcsname{0.159}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-dist-both/is\endcsname{0.349}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-dist-split/cov\endcsname{0.926}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-dist-split/ptten\endcsname{0.841}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-dist-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-dist-split/w\endcsname{0.082}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-dist-split/is\endcsname{0.231}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-dual/cov\endcsname{0.919}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-dual/ptten\endcsname{0.812}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-dual/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-dual/w\endcsname{0.138}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-dual/is\endcsname{0.360}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-dual-both/cov\endcsname{0.973}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-dual-both/ptten\endcsname{0.933}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-dual-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-dual-both/w\endcsname{0.154}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-dual-both/is\endcsname{0.347}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-local-split/cov\endcsname{0.890}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-local-split/ptten\endcsname{0.730}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-local-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-local-split/w\endcsname{0.140}
+\expandafter\def\csname e18/cluster/dav2/clean/lidar/A-local-split/is\endcsname{0.375}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-dist-both/cov\endcsname{0.980}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-dist-both/ptten\endcsname{0.949}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-dist-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-dist-both/w\endcsname{0.157}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-dist-both/is\endcsname{0.348}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-dist-split/cov\endcsname{0.938}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-dist-split/ptten\endcsname{0.859}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-dist-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-dist-split/w\endcsname{0.087}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-dist-split/is\endcsname{0.231}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-dual/cov\endcsname{0.905}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-dual/ptten\endcsname{0.819}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-dual/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-dual/w\endcsname{0.130}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-dual/is\endcsname{0.348}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-dual-both/cov\endcsname{0.973}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-dual-both/ptten\endcsname{0.936}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-dual-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-dual-both/w\endcsname{0.150}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-dual-both/is\endcsname{0.337}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-local-split/cov\endcsname{0.909}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-local-split/ptten\endcsname{0.794}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-local-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-local-split/w\endcsname{0.136}
+\expandafter\def\csname e18/cluster/dav2/lidar/clean/A-local-split/is\endcsname{0.365}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-dist-both/cov\endcsname{0.969}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-dist-both/ptten\endcsname{0.927}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-dist-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-dist-both/w\endcsname{0.158}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-dist-both/is\endcsname{0.349}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-dist-split/cov\endcsname{0.891}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-dist-split/ptten\endcsname{0.786}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-dist-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-dist-split/w\endcsname{0.076}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-dist-split/is\endcsname{0.236}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-dual/cov\endcsname{0.878}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-dual/ptten\endcsname{0.721}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-dual/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-dual/w\endcsname{0.131}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-dual/is\endcsname{0.361}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-dual-both/cov\endcsname{0.959}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-dual-both/ptten\endcsname{0.909}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-dual-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-dual-both/w\endcsname{0.147}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-dual-both/is\endcsname{0.339}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-local-split/cov\endcsname{0.890}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-local-split/ptten\endcsname{0.730}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-local-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-local-split/w\endcsname{0.140}
+\expandafter\def\csname e18/cluster/dav2/lidar/lidar/A-local-split/is\endcsname{0.375}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-dist-both/cov\endcsname{0.974}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-dist-both/ptten\endcsname{0.939}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-dist-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-dist-both/w\endcsname{0.126}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-dist-both/is\endcsname{0.249}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-dist-split/cov\endcsname{0.924}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-dist-split/ptten\endcsname{0.838}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-dist-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-dist-split/w\endcsname{0.066}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-dist-split/is\endcsname{0.175}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-dual/cov\endcsname{0.905}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-dual/ptten\endcsname{0.819}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-dual/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-dual/w\endcsname{0.103}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-dual/is\endcsname{0.243}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-dual-both/cov\endcsname{0.968}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-dual-both/ptten\endcsname{0.930}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-dual-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-dual-both/w\endcsname{0.119}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-dual-both/is\endcsname{0.233}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-local-split/cov\endcsname{0.909}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-local-split/ptten\endcsname{0.794}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-local-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-local-split/w\endcsname{0.109}
+\expandafter\def\csname e18/cluster/unidepth/clean/clean/A-local-split/is\endcsname{0.261}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-dist-both/cov\endcsname{0.970}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-dist-both/ptten\endcsname{0.930}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-dist-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-dist-both/w\endcsname{0.139}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-dist-both/is\endcsname{0.259}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-dist-split/cov\endcsname{0.926}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-dist-split/ptten\endcsname{0.843}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-dist-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-dist-split/w\endcsname{0.086}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-dist-split/is\endcsname{0.193}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-dual/cov\endcsname{0.925}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-dual/ptten\endcsname{0.820}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-dual/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-dual/w\endcsname{0.124}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-dual/is\endcsname{0.258}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-dual-both/cov\endcsname{0.971}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-dual-both/ptten\endcsname{0.932}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-dual-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-dual-both/w\endcsname{0.141}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-dual-both/is\endcsname{0.253}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-local-split/cov\endcsname{0.867}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-local-split/ptten\endcsname{0.657}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-local-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-local-split/w\endcsname{0.118}
+\expandafter\def\csname e18/cluster/unidepth/clean/lidar/A-local-split/is\endcsname{0.279}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-dist-both/cov\endcsname{0.978}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-dist-both/ptten\endcsname{0.947}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-dist-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-dist-both/w\endcsname{0.137}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-dist-both/is\endcsname{0.259}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-dist-split/cov\endcsname{0.942}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-dist-split/ptten\endcsname{0.867}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-dist-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-dist-split/w\endcsname{0.094}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-dist-split/is\endcsname{0.192}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-dual/cov\endcsname{0.905}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-dual/ptten\endcsname{0.820}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-dual/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-dual/w\endcsname{0.115}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-dual/is\endcsname{0.249}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-dual-both/cov\endcsname{0.971}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-dual-both/ptten\endcsname{0.936}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-dual-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-dual-both/w\endcsname{0.137}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-dual-both/is\endcsname{0.246}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-local-split/cov\endcsname{0.909}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-local-split/ptten\endcsname{0.794}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-local-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-local-split/w\endcsname{0.109}
+\expandafter\def\csname e18/cluster/unidepth/lidar/clean/A-local-split/is\endcsname{0.261}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-dist-both/cov\endcsname{0.958}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-dist-both/ptten\endcsname{0.905}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-dist-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-dist-both/w\endcsname{0.136}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-dist-both/is\endcsname{0.258}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-dist-split/cov\endcsname{0.868}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-dist-split/ptten\endcsname{0.750}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-dist-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-dist-split/w\endcsname{0.076}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-dist-split/is\endcsname{0.198}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-dual/cov\endcsname{0.848}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-dual/ptten\endcsname{0.625}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-dual/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-dual/w\endcsname{0.112}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-dual/is\endcsname{0.266}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-dual-both/cov\endcsname{0.946}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-dual-both/ptten\endcsname{0.883}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-dual-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-dual-both/w\endcsname{0.129}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-dual-both/is\endcsname{0.246}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-local-split/cov\endcsname{0.867}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-local-split/ptten\endcsname{0.657}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-local-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-local-split/w\endcsname{0.118}
+\expandafter\def\csname e18/cluster/unidepth/lidar/lidar/A-local-split/is\endcsname{0.279}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-dist-both/cov\endcsname{0.981}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-dist-both/ptten\endcsname{0.958}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-dist-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-dist-both/w\endcsname{0.141}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-dist-both/is\endcsname{0.314}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-dist-split/cov\endcsname{0.924}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-dist-split/ptten\endcsname{0.859}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-dist-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-dist-split/w\endcsname{0.026}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-dist-split/is\endcsname{0.106}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-dual/cov\endcsname{0.904}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-dual/ptten\endcsname{0.818}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-dual/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-dual/w\endcsname{0.028}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-dual/is\endcsname{0.118}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-dual-both/cov\endcsname{0.949}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-dual-both/ptten\endcsname{0.906}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-dual-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-dual-both/w\endcsname{0.035}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-dual-both/is\endcsname{0.116}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-local-split/cov\endcsname{0.909}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-local-split/ptten\endcsname{0.794}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-local-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-local-split/w\endcsname{0.136}
+\expandafter\def\csname e18/uniform/dav2/clean/clean/A-local-split/is\endcsname{0.365}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-dist-both/cov\endcsname{0.981}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-dist-both/ptten\endcsname{0.957}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-dist-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-dist-both/w\endcsname{0.146}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-dist-both/is\endcsname{0.316}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-dist-split/cov\endcsname{0.924}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-dist-split/ptten\endcsname{0.862}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-dist-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-dist-split/w\endcsname{0.027}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-dist-split/is\endcsname{0.108}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-dual/cov\endcsname{0.969}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-dual/ptten\endcsname{0.933}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-dual/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-dual/w\endcsname{0.056}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-dual/is\endcsname{0.139}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-dual-both/cov\endcsname{0.971}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-dual-both/ptten\endcsname{0.940}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-dual-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-dual-both/w\endcsname{0.057}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-dual-both/is\endcsname{0.138}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-local-split/cov\endcsname{0.891}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-local-split/ptten\endcsname{0.732}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-local-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-local-split/w\endcsname{0.141}
+\expandafter\def\csname e18/uniform/dav2/clean/lidar/A-local-split/is\endcsname{0.376}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-dist-both/cov\endcsname{0.972}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-dist-both/ptten\endcsname{0.935}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-dist-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-dist-both/w\endcsname{0.142}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-dist-both/is\endcsname{0.320}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-dist-split/cov\endcsname{0.696}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-dist-split/ptten\endcsname{0.498}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-dist-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-dist-split/w\endcsname{0.030}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-dist-split/is\endcsname{0.161}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-dual/cov\endcsname{0.905}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-dual/ptten\endcsname{0.818}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-dual/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-dual/w\endcsname{0.051}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-dual/is\endcsname{0.150}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-dual-both/cov\endcsname{0.917}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-dual-both/ptten\endcsname{0.845}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-dual-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-dual-both/w\endcsname{0.052}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-dual-both/is\endcsname{0.148}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-local-split/cov\endcsname{0.909}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-local-split/ptten\endcsname{0.794}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-local-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-local-split/w\endcsname{0.136}
+\expandafter\def\csname e18/uniform/dav2/lidar/clean/A-local-split/is\endcsname{0.365}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-dist-both/cov\endcsname{0.946}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-dist-both/ptten\endcsname{0.865}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-dist-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-dist-both/w\endcsname{0.146}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-dist-both/is\endcsname{0.327}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-dist-split/cov\endcsname{0.620}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-dist-split/ptten\endcsname{0.391}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-dist-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-dist-split/w\endcsname{0.029}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-dist-split/is\endcsname{0.181}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-dual/cov\endcsname{0.632}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-dual/ptten\endcsname{0.180}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-dual/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-dual/w\endcsname{0.031}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-dual/is\endcsname{0.198}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-dual-both/cov\endcsname{0.740}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-dual-both/ptten\endcsname{0.451}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-dual-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-dual-both/w\endcsname{0.039}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-dual-both/is\endcsname{0.170}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-local-split/cov\endcsname{0.891}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-local-split/ptten\endcsname{0.732}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-local-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-local-split/w\endcsname{0.141}
+\expandafter\def\csname e18/uniform/dav2/lidar/lidar/A-local-split/is\endcsname{0.376}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-dist-both/cov\endcsname{0.979}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-dist-both/ptten\endcsname{0.953}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-dist-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-dist-both/w\endcsname{0.115}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-dist-both/is\endcsname{0.226}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-dist-split/cov\endcsname{0.924}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-dist-split/ptten\endcsname{0.862}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-dist-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-dist-split/w\endcsname{0.026}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-dist-split/is\endcsname{0.097}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-dual/cov\endcsname{0.905}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-dual/ptten\endcsname{0.819}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-dual/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-dual/w\endcsname{0.028}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-dual/is\endcsname{0.108}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-dual-both/cov\endcsname{0.949}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-dual-both/ptten\endcsname{0.906}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-dual-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-dual-both/w\endcsname{0.036}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-dual-both/is\endcsname{0.106}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-local-split/cov\endcsname{0.909}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-local-split/ptten\endcsname{0.795}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-local-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-local-split/w\endcsname{0.109}
+\expandafter\def\csname e18/uniform/unidepth/clean/clean/A-local-split/is\endcsname{0.261}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-dist-both/cov\endcsname{0.978}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-dist-both/ptten\endcsname{0.952}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-dist-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-dist-both/w\endcsname{0.125}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-dist-both/is\endcsname{0.231}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-dist-split/cov\endcsname{0.925}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-dist-split/ptten\endcsname{0.867}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-dist-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-dist-split/w\endcsname{0.028}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-dist-split/is\endcsname{0.099}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-dual/cov\endcsname{0.973}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-dual/ptten\endcsname{0.942}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-dual/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-dual/w\endcsname{0.069}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-dual/is\endcsname{0.133}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-dual-both/cov\endcsname{0.975}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-dual-both/ptten\endcsname{0.946}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-dual-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-dual-both/w\endcsname{0.070}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-dual-both/is\endcsname{0.133}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-local-split/cov\endcsname{0.867}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-local-split/ptten\endcsname{0.655}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-local-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-local-split/w\endcsname{0.118}
+\expandafter\def\csname e18/uniform/unidepth/clean/lidar/A-local-split/is\endcsname{0.279}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-dist-both/cov\endcsname{0.968}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-dist-both/ptten\endcsname{0.926}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-dist-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-dist-both/w\endcsname{0.118}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-dist-both/is\endcsname{0.234}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-dist-split/cov\endcsname{0.617}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-dist-split/ptten\endcsname{0.389}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-dist-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-dist-split/w\endcsname{0.033}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-dist-split/is\endcsname{0.166}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-dual/cov\endcsname{0.905}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-dual/ptten\endcsname{0.819}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-dual/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-dual/w\endcsname{0.062}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-dual/is\endcsname{0.143}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-dual-both/cov\endcsname{0.913}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-dual-both/ptten\endcsname{0.837}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-dual-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-dual-both/w\endcsname{0.064}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-dual-both/is\endcsname{0.141}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-local-split/cov\endcsname{0.909}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-local-split/ptten\endcsname{0.795}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-local-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-local-split/w\endcsname{0.109}
+\expandafter\def\csname e18/uniform/unidepth/lidar/clean/A-local-split/is\endcsname{0.261}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-dist-both/cov\endcsname{0.920}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-dist-both/ptten\endcsname{0.781}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-dist-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-dist-both/w\endcsname{0.125}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-dist-both/is\endcsname{0.245}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-dist-split/cov\endcsname{0.527}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-dist-split/ptten\endcsname{0.284}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-dist-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-dist-split/w\endcsname{0.031}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-dist-split/is\endcsname{0.192}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-dual/cov\endcsname{0.566}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-dual/ptten\endcsname{0.112}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-dual/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-dual/w\endcsname{0.034}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-dual/is\endcsname{0.204}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-dual-both/cov\endcsname{0.667}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-dual-both/ptten\endcsname{0.327}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-dual-both/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-dual-both/w\endcsname{0.042}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-dual-both/is\endcsname{0.175}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-local-split/cov\endcsname{0.867}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-local-split/ptten\endcsname{0.655}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-local-split/short\endcsname{\pending{confirmatory}}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-local-split/w\endcsname{0.118}
+\expandafter\def\csname e18/uniform/unidepth/lidar/lidar/A-local-split/is\endcsname{0.279}
+
+%% E18 derived numbers for the text: range over UniDepthV2 and DA-V2 (20 visit splits x 2 draws).
+\newcommand{\EEighteen}[6]{\ifcsname e18/#1/#2/#3/#4/#5/#6\endcsname\prelim{\csname e18/#1/#2/#3/#4/#5/#6\endcsname}\else\pending{?}\fi}
+% A-dual truth coverage per cell; letters = structured-anchor source, then probe source (L laser, I iPad).
+% \providecommand + \renewcommand: correct whether or not the old hand-written placeholders above still exist.
+\providecommand{\NumEEighteenCovLL}{}\renewcommand{\NumEEighteenCovLL}{\prelim{0.904}--\prelim{0.905}}
+\providecommand{\NumEEighteenCovLLCluster}{}\renewcommand{\NumEEighteenCovLLCluster}{\prelim{0.905}}
+\providecommand{\NumEEighteenCovIL}{}\renewcommand{\NumEEighteenCovIL}{\prelim{0.905}}
+\providecommand{\NumEEighteenCovILCluster}{}\renewcommand{\NumEEighteenCovILCluster}{\prelim{0.905}}
+\providecommand{\NumEEighteenCovLI}{}\renewcommand{\NumEEighteenCovLI}{\prelim{0.969}--\prelim{0.973}}
+\providecommand{\NumEEighteenCovLICluster}{}\renewcommand{\NumEEighteenCovLICluster}{\prelim{0.919}--\prelim{0.925}}
+\providecommand{\NumEEighteenCovII}{}\renewcommand{\NumEEighteenCovII}{\prelim{0.566}--\prelim{0.632}}
+\providecommand{\NumEEighteenCovIICluster}{}\renewcommand{\NumEEighteenCovIICluster}{\prelim{0.848}--\prelim{0.878}}
+% A-dual p10 and short share (both one draw; short macros include \%) where the probes report the truth (L/L, I/L)
+\newcommand{\NumEEighteenPTen}{\prelim{0.818}--\prelim{0.820}}
+\newcommand{\NumEEighteenShort}{\pending{confirmatory}}
+% A-dual p10 and short share with iPad values for both, uniform
+\newcommand{\NumEEighteenPTenII}{\prelim{0.11}--\prelim{0.18}}
+\newcommand{\NumEEighteenShortII}{\pending{confirmatory}}
+% uniform: A-dist-split truth coverage with iPad anchors (both probe sources); A-dual-both, iPad/iPad
+\newcommand{\NumEEighteenDistIpad}{\prelim{0.53}--\prelim{0.70}}
+\newcommand{\NumEEighteenHullII}{\prelim{0.67}--\prelim{0.74}}
+% cluster: A-dist-split truth coverage with iPad anchors (both probe sources); A-dual-both, iPad/iPad
+\newcommand{\NumEEighteenDistIpadCluster}{\prelim{0.87}--\prelim{0.94}}
+\newcommand{\NumEEighteenHullIICluster}{\prelim{0.95}--\prelim{0.96}}
+% A-dist-both: lowest truth coverage over all cells, models, layouts; rel. IS over A-dual (L/L)
+\newcommand{\NumEEighteenDistBothMin}{\prelim{0.92}}
+\newcommand{\NumEEighteenDistBothRatio}{\prelim{2.1}--\prelim{2.7}}
+\newcommand{\NumEEighteenDistBothRatioCluster}{\prelim{1.0}}
+% laser anchors, iPad probes, uniform: A-dual median width factor vs laser probes
+\newcommand{\NumEEighteenWiden}{\prelim{2.0}--\prelim{2.5}}
+% consistency with E19 (3 splits, one draw): UniDepthV2, iPad/iPad, uniform, A-dual truth coverage E18 vs E19
+\newcommand{\NumEEighteenUniII}{\prelim{0.566}}
+
+%% [theory] design rule, c = 0.85, one draw: P(Cov_i < c) = P(Bin(n, c) >= r); nominal level r/(n+1).
+\newcommand{\NumRuleShortTwentyAll}{3.9}
+\newcommand{\NumRuleNomTwentyAll}{0.952}
+\newcommand{\NumRuleShortFortyEight}{4.9}
+\newcommand{\NumRuleNomFortyEight}{0.927}
+\newcommand{\NumRuleShortHundred}{5.5}
+%% <<< GENERATED

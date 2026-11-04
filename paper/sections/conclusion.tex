@@ -1,0 +1,7 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+Structured sparse measurements make monocular foundation models far more accurate per image, but reused as calibration data they silently void the per-image guarantee.
+Giving the sensor budget two roles fixes this: structured anchors build the prediction, and a few uniformly random probes, hidden from the predictor, calibrate it within each image.
+The resulting layer needs no calibration images, makes the probe count a design parameter, and runs on any probe-independent centre.
+It certifies what the probes measure: laser probes certified the depth even with iPad anchors, iPad probes only the iPad reading.

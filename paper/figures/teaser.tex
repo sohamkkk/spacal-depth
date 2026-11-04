@@ -1,0 +1,25 @@
+%% Teaser (two-column strip). PLACEHOLDER panels; final content described in the caption and in README.md.
+%% Planned panels, one ARKitScenes frame, clustered layout, k = 200, n = 20, UniDepthV2:
+%%  (a) RGB with structured anchors (dots) and probes (crosses); (b) per-pixel miss map of A-local on the
+%%  structured anchors; (c) miss map of A-dual; (d) per-image coverage histogram over test images, both methods,
+%%  with the 0.9 target line.
+\newcommand{\teaserpanel}[1]{%
+  \begin{tikzpicture}
+    \draw[gray!60, fill=gray!8] (0,0) rectangle (0.235\linewidth,0.15\linewidth);
+    \node[align=center, font=\scriptsize\sffamily, text width=0.21\linewidth] at (0.1175\linewidth,0.075\linewidth) {#1};
+  \end{tikzpicture}}
+\begin{strip}
+\centering
+\teaserpanel{(a) RGB + structured anchors ($\bullet$) + random probes ($\times$)}\hfill
+\teaserpanel{(b) \mLocal reusing structured anchors: misses (red) far from the cluster}\hfill
+\teaserpanel{(c) \mDual: same anchors predict, probes calibrate}\hfill
+\teaserpanel{(d) per-image coverage across test images; target 0.9}
+\captionsetup{hypcap=false}
+\captionof{figure}{\textbf{Reusing structured depth measurements for calibration fails silently; separating their roles does not.}
+A frozen monocular model plus sparse metric anchors placed by the sensor (here one cluster).
+Calibrating within the image on the same anchors (b) yields tight intervals that miss most of the frame;
+spending a few measurements as uniformly random probes that never enter the prediction (c) restores the
+per-image guarantee for any layout (d). \pending{placeholder panels: render from \texttt{experiments/qualitative.py}}}
+\captionsetup{hypcap=true}
+\label{fig:teaser}%
+\end{strip}

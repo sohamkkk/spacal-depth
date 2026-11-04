@@ -1,0 +1,40 @@
+% CVPR 2027 submission draft -- built on the official author kit (cvpr-org/author-kit, tag CVPR2027-v1).
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+%%%%%%%%% PAPER TYPE
+\usepackage[review]{cvpr}      % REVIEW version (double-blind, line numbers)
+
+\input{macros}
+\input{numbers}
+
+\definecolor{cvprblue}{rgb}{0.21,0.49,0.74}
+\usepackage[pagebackref,breaklinks,colorlinks,allcolors=cvprblue]{hyperref}
+
+\def\confName{CVPR}
+\def\confYear{2027}
+
+%%%%%%%%% TITLE (decided by the authors, v4)
+\title{Structured Anchors Predict, Random Probes Calibrate:\\A Per-Image Conformal Layer for Sparse-Guided Depth}
+
+%%%%%%%%% AUTHORS (anonymous for review)
+\author{Anonymous CVPR submission}
+
+\begin{document}
+\maketitle
+\input{figures/teaser}
+\input{sections/abstract}
+\input{sections/intro}
+\input{sections/related}
+\input{sections/setup}
+\input{sections/method}
+\input{sections/experiments}
+\input{sections/results}
+\input{sections/limitations}
+\input{sections/conclusion}
+{
+    \small
+    \bibliographystyle{ieeenat_fullname}
+    \bibliography{refs}
+}
+
+\end{document}

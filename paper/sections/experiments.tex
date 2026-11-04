@@ -1,0 +1,40 @@
+\section{Experimental setup}
+\label{sec:experiments}
+
+\paragraph{Datasets.}
+\emph{NYU Depth v2}~\cite{silberman2012nyu}: 1{,}449 images from 464 rooms (Kinect, $<$10\,m).
+\emph{KITTI}~\cite{geiger2012kitti}: 652 Eigen test plus 800 Eigen-train frames from 61 drives (Garg crop, $<$80\,m); its ground truth comes from the LiDAR that would provide the anchors, so it cannot test an independent sensor.
+\emph{ARKitScenes}~\cite{baruch2021arkitscenes}, depth-upsampling validation split: \NumArkFrames{} frames from \NumArkVisits{} visits, ground truth from a Faro laser scan, deployed sensor the iPad Pro LiDAR depth from ARKit (fused, with confidence $\{0,1,2\}$), which reads about \NumArkIpadOffset\% nearer than the laser (preprocessing in Supp.~G).
+Valid pixels are kept on a lattice (stride 4 on NYU, 2 on KITTI, 8 on ARKitScenes) and stored per image, so per-image statistics are exact.
+Every split is by scene (room, drive, visit): 30\% head-train (fits $m$, $s$ and hyper-parameters), 35\% calibration (cross-scene thresholds; unused by \mDual), 35\% test.
+
+\paragraph{Frozen models.}
+UniDepthV2-Large~\cite{piccinelli2025unidepthv2}, Depth Anything V2 Large metric~\cite{yang2024dav2} (indoor checkpoint, fine-tuned on Hypersim, on NYU and ARKitScenes; outdoor checkpoint, fine-tuned on Virtual KITTI~2, on KITTI) and, on NYU and KITTI, Depth Pro~\cite{bochkovskii2025depthpro}; Metric3D v2~\cite{hu2024metric3dv2} is in the supplement.
+NYU and KITTI are not in the training mixtures of these models (Supp.~G).
+UniDepthV2's training mixture includes ARKitScenes (split not reported)~\cite{piccinelli2025unidepthv2}; our validation-split frames are likely unseen, the domain is not, which affects width, not any guarantee.
+Depth Pro, trained on ARKitScenes, is not used there.
+
+\paragraph{Measurements.}
+$k\in\{50,200\}$ measurements per image, of which $n=20$ are probes (ablation $n\in\{10,40\}$), under the five layouts of \cref{sec:setup}.
+On NYU and KITTI they report the ground truth.
+On ARKitScenes, anchors and probes each report the laser or the iPad value, a $2\times2$ factorial (laser/laser, iPad/laser, laser/iPad, iPad/iPad); coverage is always measured against the laser.
+For UniDepthV2 and DA-V2 (E18): $k=200$ (180 anchors, 20 probes), uniform and cluster layouts, \NumReplSplits{} visit splits $\times$ 2 probe draws.
+
+\paragraph{Methods.}
+All methods share positions and the log-residual score.
+\emph{Baselines:} \mLocal~\cite{mao2024spatial} calibrates within the image on the structured anchors themselves (half fix a shift, half set the width; valid only for uniform anchors); \mLocalSplit does the same on the $n$ probes; \mDistSplit (\cref{sec:both}); \mDistBoth $=$ hull(\mDistSplit, \mLocalSplit).
+\emph{Ours:} \mDual\ifenvelopemain, \mDualBoth and \mDualEnv\else{} and \mDualBoth\fi.
+\emph{Completion centre (E19):} \omnidc~\cite{zuo2025omnidc} (v1.1, Depth Anything V2 prior; trained only on five synthetic datasets, Hypersim, IRS, TartanAir, BlendedMVS and Virtual KITTI, so zero-shot on ARKitScenes) on ARKitScenes, $k=200$ (180 anchors, 20 probes), uniform and cluster layouts, laser anchors with laser or iPad probes (iPad-anchor cells: exploratory, three splits), UniDepthV2 as the frozen alternative, \NumOmniSeeds{} visit splits $\times$ 1 probe draw.
+\omnidc sees RGB and the structured anchors only, never the probes.
+Both centres are calibrated four ways: \mSplitCP (one quantile of $|\log y-\log\yhat|$ over calibration-scene pixels; marginal; needs dense laser depth), \mDistSplit, \mDual and \mDualBoth, with $m$, $s$ refit per centre.
+
+\paragraph{Metrics.}
+Coverage is image-averaged \cref{eq:cov}; per-image spread is the 10th percentile (p10) of $\Cov_i$ and the share of \emph{short} images, whose coverage on one probe draw is below $1-\alpha-0.05=0.85$ (law: \NumBetaShortOneTwenty\% at $n=20$).
+Width is the median of $(u-\ell)/\yhat$, or of $(u-\ell)/y$ when centres differ.
+The pixel interval score $(u-\ell)+\tfrac{2}{\alpha}\big[(\ell-y)_+ + (y-u)_+\big]$ penalizes misses by their size; the relative interval score is the median over images of its per-image mean over $y$, robust to a few extreme images while keeping the miss penalty (exploratory: mean over images); the share of pixels with intervals wider than $10y$ (infinite included) exposes failures a robust score hides.
+
+\paragraph{Protocol.}
+$\alpha=0.1$ throughout.
+Exploratory runs (3 scene splits $\times$ 2 probe draws; E18: \NumReplSplits{} splits; E19: 3 splits $\times$ 1 draw) chose the shrinkage $\gamma=0.5$ (\cref{eq:shrink}), after $\gamma=1$ showed a heavy width tail, and the design; validity holds for any fixed $\gamma$.
+All reported comparisons come from a confirmatory replication whose analysis plan was fixed before the runs: \NumReplSplits{} splits $\times$ \NumProbeDraws{} draws on NYU and KITTI (plus an $r=n=20$ arm) and in E18; in E19, 10 splits with their own anchor masks and \omnidc from laser anchors (Supp.~G).
+A method is valid if its mean coverage is $\ge1-\alpha-2\,$SE (\mDual: also within 2\,SE of $r/(n+1)$), and better only if the 95\% paired bootstrap interval over splits ($10^4$ resamples) of the IS difference excludes zero.

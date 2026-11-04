@@ -1,0 +1,475 @@
+% refs.bib -- only works named in the project's source documents or well established.
+% Entries with an unverified detail carry  note = {\verify{...}}  so the marker is visible in the PDF.
+% "checked <date>" = author list / title / venue confirmed on an official page (publisher, CVF, PMLR, OpenReview,
+% arXiv, DBLP or the authors' code release) during drafting.
+
+%% ---------------------------------------------------------------- monocular depth
+@inproceedings{eigen2014depth,
+  author    = {Eigen, David and Puhrsch, Christian and Fergus, Rob},
+  title     = {Depth Map Prediction from a Single Image using a Multi-Scale Deep Network},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2014}
+}
+
+% checked 2026-11-03 on arXiv 1907.01341 / IEEE TPAMI.
+@article{ranftl2022midas,
+  author  = {Ranftl, Ren{\'e} and Lasinger, Katrin and Hafner, David and Schindler, Konrad and Koltun, Vladlen},
+  title   = {Towards Robust Monocular Depth Estimation: Mixing Datasets for Zero-Shot Cross-Dataset Transfer},
+  journal = {IEEE Transactions on Pattern Analysis and Machine Intelligence},
+  volume  = {44},
+  number  = {3},
+  pages   = {1623--1637},
+  year    = {2022}
+}
+
+% checked 2026-11-03 on the NeurIPS proceedings page.
+@inproceedings{yang2024dav2,
+  author    = {Yang, Lihe and Kang, Bingyi and Huang, Zilong and Zhao, Zhen and Xu, Xiaogang and Feng, Jiashi and Zhao, Hengshuang},
+  title     = {Depth Anything {V2}},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2024}
+}
+
+% checked 2026-11-03 on the CVF open-access page.
+@inproceedings{piccinelli2024unidepth,
+  author    = {Piccinelli, Luigi and Yang, Yung-Hsu and Sakaridis, Christos and Segu, Mattia and Li, Siyuan and Van Gool, Luc and Yu, Fisher},
+  title     = {{UniDepth}: Universal Monocular Metric Depth Estimation},
+  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  pages     = {10106--10116},
+  year      = {2024}
+}
+
+% checked 2026-11-03: arXiv 2502.20110 (training mixture lists ARKitScenes); published in IEEE TPAMI (early access).
+@article{piccinelli2025unidepthv2,
+  author  = {Piccinelli, Luigi and Sakaridis, Christos and Yang, Yung-Hsu and Segu, Mattia and Li, Siyuan and Abbeloos, Wim and Van Gool, Luc},
+  title   = {{UniDepthV2}: Universal Monocular Metric Depth Estimation Made Simpler},
+  journal = {IEEE Transactions on Pattern Analysis and Machine Intelligence},
+  pages   = {1--14},
+  doi     = {10.1109/TPAMI.2025.3628473},
+  year    = {2025}
+}
+
+% checked 2026-11-03 on IEEE Xplore / arXiv 2404.15506.
+@article{hu2024metric3dv2,
+  author  = {Hu, Mu and Yin, Wei and Zhang, Chi and Cai, Zhipeng and Long, Xiaoxiao and Chen, Hao and Wang, Kaixuan and Yu, Gang and Shen, Chunhua and Shen, Shaojie},
+  title   = {{Metric3D v2}: A Versatile Monocular Geometric Foundation Model for Zero-shot Metric Depth and Surface Normal Estimation},
+  journal = {IEEE Transactions on Pattern Analysis and Machine Intelligence},
+  volume  = {46},
+  number  = {12},
+  pages   = {10579--10596},
+  year    = {2024}
+}
+
+% checked 2026-11-03 on arXiv 2410.02073 and OpenReview (ICLR 2025); arXiv spelling of the names kept.
+@inproceedings{bochkovskii2025depthpro,
+  author    = {Bochkovskii, Aleksei and Delaunoy, Ama{\"e}l and Germain, Hugo and Santos, Marcel and Zhou, Yichao and Richter, Stephan R. and Koltun, Vladlen},
+  title     = {Depth Pro: Sharp Monocular Metric Depth in Less Than a Second},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2025}
+}
+
+%% ---------------------------------------------------------------- depth completion / sparse-guided
+% checked 2026-11-03 on IEEE Xplore / arXiv 1709.07492.
+@inproceedings{ma2018sparse,
+  author    = {Ma, Fangchang and Karaman, Sertac},
+  title     = {Sparse-to-Dense: Depth Prediction from Sparse Depth Samples and a Single Image},
+  booktitle = {IEEE International Conference on Robotics and Automation (ICRA)},
+  pages     = {1--8},
+  year      = {2018}
+}
+
+% checked 2026-11-03 on arXiv 1708.06500 / IEEE Xplore.
+@inproceedings{uhrig2017sparsity,
+  author    = {Uhrig, Jonas and Schneider, Nick and Schneider, Lukas and Franke, Uwe and Brox, Thomas and Geiger, Andreas},
+  title     = {Sparsity Invariant {CNNs}},
+  booktitle = {International Conference on 3D Vision (3DV)},
+  year      = {2017}
+}
+
+% checked 2026-11-03 on the ECVA open-access page.
+@inproceedings{cheng2018cspn,
+  author    = {Cheng, Xinjing and Wang, Peng and Yang, Ruigang},
+  title     = {Depth Estimation via Affinity Learned with Convolutional Spatial Propagation Network},
+  booktitle = {European Conference on Computer Vision (ECCV)},
+  pages     = {103--119},
+  year      = {2018}
+}
+
+% checked 2026-11-03 on the ECVA open-access page.
+@inproceedings{park2020nlspn,
+  author    = {Park, Jinsun and Joo, Kyungdon and Hu, Zhe and Liu, Chi-Kuei and Kweon, In So},
+  title     = {Non-Local Spatial Propagation Network for Depth Completion},
+  booktitle = {European Conference on Computer Vision (ECCV)},
+  pages     = {120--136},
+  year      = {2020}
+}
+
+% checked 2026-11-03 on the CVF open-access page.
+@inproceedings{eldesokey2020uncertainty,
+  author    = {Eldesokey, Abdelrahman and Felsberg, Michael and Holmquist, Karl and Persson, Michael},
+  title     = {Uncertainty-Aware {CNNs} for Depth Completion: Uncertainty from Beginning to End},
+  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  pages     = {12014--12023},
+  year      = {2020}
+}
+
+% checked 2026-11-03 on the CVF open-access page and DBLP (pages from the CVF page; DBLP lists 16127--16137).
+@inproceedings{qu2021bdbf,
+  author    = {Qu, Chao and Liu, Wenxin and Taylor, Camillo J.},
+  title     = {Bayesian Deep Basis Fitting for Depth Completion with Uncertainty},
+  booktitle = {Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)},
+  pages     = {16147--16157},
+  year      = {2021}
+}
+
+% checked 2026-11-02 on the CVF open-access page.
+@inproceedings{zuo2025omnidc,
+  author    = {Zuo, Yiming and Yang, Willow and Ma, Zeyu and Deng, Jia},
+  title     = {{OMNI-DC}: Highly Robust Depth Completion with Multiresolution Depth Integration},
+  booktitle = {Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)},
+  pages     = {9287--9297},
+  year      = {2025}
+}
+
+% checked 2026-11-03 on the CVF open-access page.
+@inproceedings{lin2025promptda,
+  author    = {Lin, Haotong and Peng, Sida and Chen, Jingxiao and Peng, Songyou and Sun, Jiaming and Liu, Minghuan and Bao, Hujun and Feng, Jiashi and Zhou, Xiaowei and Kang, Bingyi},
+  title     = {Prompting Depth Anything for {4K} Resolution Accurate Metric Depth Estimation},
+  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  pages     = {17070--17080},
+  year      = {2025}
+}
+
+% checked 2026-11-03 on the CVF open-access page.
+@inproceedings{viola2025marigolddc,
+  author    = {Viola, Massimiliano and Qu, Kevin and Metzger, Nando and Ke, Bingxin and Becker, Alexander and Schindler, Konrad and Obukhov, Anton},
+  title     = {{Marigold-DC}: Zero-Shot Monocular Depth Completion with Guided Diffusion},
+  booktitle = {Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)},
+  pages     = {5359--5370},
+  year      = {2025}
+}
+
+% checked 2026-11-03 on arXiv 2505.10565.
+@article{wang2025priorda,
+  author  = {Wang, Zehan and Chen, Siyu and Yang, Lihe and Wang, Jialei and Zhang, Ziang and Zhao, Hengshuang and Zhao, Zhou},
+  title   = {Depth Anything with Any Prior},
+  journal = {arXiv preprint arXiv:2505.10565},
+  year    = {2025}
+}
+
+% checked 2026-11-03 on arXiv 2303.12134 and IEEE Xplore (doi 10.1109/ICRA48891.2023.10161013).
+@inproceedings{wofk2023videpth,
+  author    = {Wofk, Diana and Ranftl, Ren{\'e} and M{\"u}ller, Matthias and Koltun, Vladlen},
+  title     = {Monocular Visual-Inertial Depth Estimation},
+  booktitle = {IEEE International Conference on Robotics and Automation (ICRA)},
+  year      = {2023}
+}
+
+% checked 2026-11-03 on arXiv 2607.04101.
+@article{roy2026mrac,
+  author  = {Roy, Sohag and Misra, Rajesh and Shastravidyananda, Swami and Maharaj, Tamal},
+  title   = {The Multipath Blind Spot: {K}-Agnostic Robust Calibration for Sparse-Anchor Metric Depth from Frozen Foundations},
+  journal = {arXiv preprint arXiv:2607.04101},
+  year    = {2026}
+}
+
+% checked 2026-11-03 on OpenReview (TMLR).
+@article{feldman2023onlinerisk,
+  author  = {Feldman, Shai and Ringel, Liran and Bates, Stephen and Romano, Yaniv},
+  title   = {Achieving Risk Control in Online Learning Settings},
+  journal = {Transactions on Machine Learning Research (TMLR)},
+  year    = {2023}
+}
+
+%% ---------------------------------------------------------------- conformal prediction
+@book{vovk2005alrw,
+  author    = {Vovk, Vladimir and Gammerman, Alexander and Shafer, Glenn},
+  title     = {Algorithmic Learning in a Random World},
+  publisher = {Springer},
+  year      = {2005}
+}
+
+% checked 2026-11-02 on PMLR.
+@inproceedings{vovk2012conditional,
+  author    = {Vovk, Vladimir},
+  title     = {Conditional Validity of Inductive Conformal Predictors},
+  booktitle = {Proceedings of the Asian Conference on Machine Learning (ACML)},
+  series    = {PMLR},
+  volume    = {25},
+  pages     = {475--490},
+  year      = {2012}
+}
+
+@article{lei2018distribution,
+  author  = {Lei, Jing and G'Sell, Max and Rinaldo, Alessandro and Tibshirani, Ryan J. and Wasserman, Larry},
+  title   = {Distribution-Free Predictive Inference for Regression},
+  journal = {Journal of the American Statistical Association},
+  year    = {2018}
+}
+
+% checked 2026-11-03 on Foundations and Trends in Machine Learning (now publishers) / arXiv 2107.07511.
+@article{angelopoulos2023gentle,
+  author  = {Angelopoulos, Anastasios N. and Bates, Stephen},
+  title   = {Conformal Prediction: A Gentle Introduction},
+  journal = {Foundations and Trends in Machine Learning},
+  volume  = {16},
+  number  = {4},
+  pages   = {494--591},
+  year    = {2023}
+}
+
+% checked 2026-11-03 on the NeurIPS proceedings page.
+@inproceedings{romano2019cqr,
+  author    = {Romano, Yaniv and Patterson, Evan and Cand{\`e}s, Emmanuel J.},
+  title     = {Conformalized Quantile Regression},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  pages     = {3543--3553},
+  year      = {2019}
+}
+
+@inproceedings{angelopoulos2024crc,
+  author    = {Angelopoulos, Anastasios N. and Bates, Stephen and Fisch, Adam and Lei, Lihua and Schuster, Tal},
+  title     = {Conformal Risk Control},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2024}
+}
+
+% checked 2026-11-03 on PMLR.
+@inproceedings{angelopoulos2022im2im,
+  author    = {Angelopoulos, Anastasios N. and Kohli, Amit Pal and Bates, Stephen and Jordan, Michael I. and Malik, Jitendra and Alshaabi, Thayer and Upadhyayula, Srigokul and Romano, Yaniv},
+  title     = {Image-to-Image Regression with Distribution-Free Uncertainty Quantification and Applications in Imaging},
+  booktitle = {International Conference on Machine Learning (ICML)},
+  series    = {PMLR},
+  volume    = {162},
+  pages     = {717--730},
+  year      = {2022}
+}
+
+% checked 2026-11-03 on PMLR.
+@inproceedings{teneggi2023krcps,
+  author    = {Teneggi, Jacopo and Tivnan, Matthew and Stayman, Web and Sulam, Jeremias},
+  title     = {How to Trust Your Diffusion Model: A Convex Optimization Approach to Conformal Risk Control},
+  booktitle = {International Conference on Machine Learning (ICML)},
+  series    = {PMLR},
+  volume    = {202},
+  pages     = {33940--33960},
+  year      = {2023}
+}
+
+% checked 2026-11-03 on the CVF open-access page.
+@inproceedings{mossina2024segmentation,
+  author    = {Mossina, Luca and Dalmau, Joseba and And{\'e}ol, L{\'e}o},
+  title     = {Conformal Semantic Image Segmentation: Post-hoc Quantification of Predictive Uncertainty},
+  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops (CVPRW)},
+  pages     = {3574--3584},
+  year      = {2024}
+}
+
+% checked 2026-11-03 on the CVF open-access page.
+@inproceedings{brunekreef2024kandinsky,
+  author    = {Brunekreef, Joren and Marcus, Eric and Sheombarsing, Ray and Sonke, Jan-Jakob and Teuwen, Jonas},
+  title     = {Kandinsky Conformal Prediction: Efficient Calibration of Image Segmentation Algorithms},
+  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  pages     = {4135--4143},
+  year      = {2024}
+}
+
+% checked 2026-11-03 on PMLR.
+@inproceedings{bairaktari2025kandinsky,
+  author    = {Bairaktari, Konstantina and Wu, Jiayun and Wu, Zhiwei Steven},
+  title     = {Kandinsky Conformal Prediction: Beyond Class- and Covariate-Conditional Coverage},
+  booktitle = {International Conference on Machine Learning (ICML)},
+  series    = {PMLR},
+  volume    = {267},
+  pages     = {2581--2602},
+  year      = {2025}
+}
+
+% checked 2026-11-03 on Project Euclid.
+@article{barber2023beyond,
+  author  = {Barber, Rina Foygel and Cand{\`e}s, Emmanuel J. and Ramdas, Aaditya and Tibshirani, Ryan J.},
+  title   = {Conformal Prediction Beyond Exchangeability},
+  journal = {The Annals of Statistics},
+  volume  = {51},
+  number  = {2},
+  pages   = {816--845},
+  year    = {2023}
+}
+
+% checked 2026-11-03 on Oxford Academic.
+@article{barber2021limits,
+  author  = {Barber, Rina Foygel and Cand{\`e}s, Emmanuel J. and Ramdas, Aaditya and Tibshirani, Ryan J.},
+  title   = {The Limits of Distribution-Free Conditional Predictive Inference},
+  journal = {Information and Inference: A Journal of the IMA},
+  volume  = {10},
+  number  = {2},
+  pages   = {455--482},
+  year    = {2021}
+}
+
+@inproceedings{gui2023cmc,
+  author    = {Gui, Yu and Barber, Rina Foygel and Ma, Cong},
+  title     = {Conformalized Matrix Completion},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2023}
+}
+
+% checked 2026-11-03 on Taylor & Francis (JASA).
+@article{mao2024spatial,
+  author  = {Mao, Huiying and Martin, Ryan and Reich, Brian J.},
+  title   = {Valid Model-Free Spatial Prediction},
+  journal = {Journal of the American Statistical Association},
+  volume  = {119},
+  number  = {546},
+  pages   = {904--914},
+  year    = {2024}
+}
+
+@article{wieczorek2023design,
+  author  = {Wieczorek, Jerzy},
+  title   = {Design-Based Conformal Prediction},
+  journal = {Survey Methodology},
+  volume  = {49},
+  number  = {2},
+  year    = {2023}
+}
+
+@article{guan2023localized,
+  author  = {Guan, Leying},
+  title   = {Localized Conformal Prediction: A Generalized Inference Framework for Conformal Prediction},
+  journal = {Biometrika},
+  volume  = {110},
+  number  = {1},
+  year    = {2023}
+}
+
+% checked 2026-11-03 on Oxford Academic (JRSS-B) / arXiv 2305.12616.
+@article{gibbs2023conditional,
+  author  = {Gibbs, Isaac and Cherian, John J. and Cand{\`e}s, Emmanuel J.},
+  title   = {Conformal Prediction With Conditional Guarantees},
+  journal = {Journal of the Royal Statistical Society Series B: Statistical Methodology},
+  volume  = {87},
+  number  = {4},
+  pages   = {1100--1126},
+  year    = {2025}
+}
+
+% checked 2026-11-03 on arXiv 2412.01098 and the ICML 2026 virtual poster page.
+@inproceedings{jiang2024lscp,
+  author    = {Jiang, Hanyang and Xie, Yao},
+  title     = {Spatial Conformal Inference through Localized Quantile Regression},
+  booktitle = {International Conference on Machine Learning (ICML)},
+  year      = {2026}
+}
+
+% checked 2026-11-02 on jmlr.org (v25/23-1549).
+@article{einbinder2024labelnoise,
+  author  = {Einbinder, Bat-Sheva and Feldman, Shai and Bates, Stephen and Angelopoulos, Anastasios N. and Gendler, Asaf and Romano, Yaniv},
+  title   = {Label Noise Robustness of Conformal Prediction},
+  journal = {Journal of Machine Learning Research},
+  volume  = {25},
+  number  = {328},
+  pages   = {1--66},
+  year    = {2024}
+}
+
+@article{gasparin2024merging,
+  author  = {Gasparin, Matteo and Ramdas, Aaditya},
+  title   = {Merging Uncertainty Sets via Majority Vote},
+  journal = {arXiv preprint arXiv:2401.09379},
+  year    = {2024}
+}
+
+@inproceedings{tibshirani2019covshift,
+  author    = {Tibshirani, Ryan J. and Barber, Rina Foygel and Cand{\`e}s, Emmanuel J. and Ramdas, Aaditya},
+  title     = {Conformal Prediction Under Covariate Shift},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2019}
+}
+
+%% ---------------------------------------------------------------- uncertainty for depth
+@inproceedings{kendall2017uncertainties,
+  author    = {Kendall, Alex and Gal, Yarin},
+  title     = {What Uncertainties Do We Need in {Bayesian} Deep Learning for Computer Vision?},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2017}
+}
+
+% checked 2026-11-03 on the NeurIPS proceedings page.
+@inproceedings{lakshminarayanan2017ensembles,
+  author    = {Lakshminarayanan, Balaji and Pritzel, Alexander and Blundell, Charles},
+  title     = {Simple and Scalable Predictive Uncertainty Estimation using Deep Ensembles},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2017}
+}
+
+@inproceedings{poggi2020uncertainty,
+  author    = {Poggi, Matteo and Aleotti, Filippo and Tosi, Fabio and Mattoccia, Stefano},
+  title     = {On the Uncertainty of Self-Supervised Monocular Depth Estimation},
+  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year      = {2020}
+}
+
+@inproceedings{hornauer2022gradient,
+  author    = {Hornauer, Julia and Belagiannis, Vasileios},
+  title     = {Gradient-based Uncertainty for Monocular Depth Estimation},
+  booktitle = {European Conference on Computer Vision (ECCV)},
+  year      = {2022}
+}
+
+% checked 2026-11-03 on arXiv 2608.29705.
+@article{deng2026calibrationaudit,
+  author  = {Deng, Nanxing Nick and Cheng, Qing and Zeller, Niclas and Cremers, Daniel},
+  title   = {A Calibration Audit of Confidence in Feed-Forward {3D} Reconstruction Models},
+  journal = {arXiv preprint arXiv:2608.29705},
+  year    = {2026}
+}
+
+%% ---------------------------------------------------------------- adaptive sampling and steerable sensors
+% checked 2026-11-03 on IEEE Xplore / the authors' project page.
+@inproceedings{bergman2020adaptivelidar,
+  author    = {Bergman, Alexander W. and Lindell, David B. and Wetzstein, Gordon},
+  title     = {Deep Adaptive {LiDAR}: End-to-end Optimization of Sampling and Depth Completion at Low Sampling Rates},
+  booktitle = {IEEE International Conference on Computational Photography (ICCP)},
+  year      = {2020}
+}
+
+% checked 2026-11-03 (3DV 2020).
+@inproceedings{pittaluga2020mems,
+  author    = {Pittaluga, Francesco and Tasneem, Zaid and Folden, Justin and Tilmon, Brevin and Chakrabarti, Ayan and Koppal, Sanjeev J.},
+  title     = {Towards a {MEMS}-based Adaptive {LIDAR}},
+  booktitle = {International Conference on 3D Vision (3DV)},
+  year      = {2020}
+}
+
+% checked 2026-11-03 on the CVF open-access page.
+@inproceedings{taguchi2023interactive,
+  author    = {Taguchi, Kensuke and Morita, Shogo and Hayashi, Yusuke and Imaeda, Wataru and Fujiyoshi, Hironobu},
+  title     = {Uncertainty-Aware Interactive {LiDAR} Sampling for Deep Depth Completion},
+  booktitle = {Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision (WACV)},
+  pages     = {3028--3036},
+  year      = {2023}
+}
+
+%% ---------------------------------------------------------------- datasets
+@inproceedings{silberman2012nyu,
+  author    = {Silberman, Nathan and Hoiem, Derek and Kohli, Pushmeet and Fergus, Rob},
+  title     = {Indoor Segmentation and Support Inference from {RGBD} Images},
+  booktitle = {European Conference on Computer Vision (ECCV)},
+  year      = {2012}
+}
+
+@inproceedings{geiger2012kitti,
+  author    = {Geiger, Andreas and Lenz, Philip and Urtasun, Raquel},
+  title     = {Are We Ready for Autonomous Driving? {The} {KITTI} Vision Benchmark Suite},
+  booktitle = {Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year      = {2012}
+}
+
+% author list as cited in UniDepthV2 (checked 2026-11-02).
+@inproceedings{baruch2021arkitscenes,
+  author    = {Baruch, Gilad and Chen, Zhuoyuan and Dehghan, Afshin and Dimry, Tal and Feigin, Yuri and Fu, Peter and Gebauer, Thomas and Joffe, Brandon and Kurz, Daniel and Schwartz, Arik and Shulman, Elad},
+  title     = {{ARKitScenes}: A Diverse Real-World Dataset for {3D} Indoor Scene Understanding Using Mobile {RGB-D} Data},
+  booktitle = {NeurIPS Datasets and Benchmarks Track},
+  year      = {2021}
+}

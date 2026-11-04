@@ -1,0 +1,80 @@
+%% Packages and macros shared by main.tex and supplement.tex.
+%% Load before hyperref (cvpr.sty already loads amsmath, amssymb, booktabs, graphicx, xcolor, natbib, caption, subcaption).
+
+\usepackage{cuted}      % two-column teaser (official kit tweak)
+\usepackage{currfile}   % \currfilebase for figure labels (official kit tweak)
+\usepackage{amsthm}
+\usepackage{multirow}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,calc,backgrounds}
+
+%% ---------------------------------------------------------------------------
+%% Draft annotations. ALL of these must be gone (or switched off) before submission.
+%%   \verify{...}   unverified fact / citation detail          (red)
+%%   \pending{...}  number or sentence waiting for an experiment (red, bold)
+%%   \tbd           empty table cell waiting for final numbers  (red dash)
+%%   \TODO{...}     writing to-do                                (red, bold)
+%%   \prelim{...}   preliminary (descriptive) number; rendered orange while \ifshowprelim is true
+%% ---------------------------------------------------------------------------
+\newif\ifshowprelim
+\showprelimtrue   % set to \showprelimfalse to render preliminary numbers in black
+\newcommand{\verify}[1]{{\color{red}[VERIFY: #1]}}
+\newcommand{\pending}[1]{{\color{red}\textbf{[#1]}}}
+\newcommand{\tbd}{{\color{red}--}}
+\newcommand{\TODO}[1]{{\color{red}\textbf{[TODO: #1]}}}
+\newcommand{\prelim}[1]{\ifshowprelim{\color{orange}#1}\else#1\fi}
+%   \placeholder{title}{text}  framed box for an experiment that is still running (red frame)
+\newcommand{\placeholder}[2]{\par\smallskip\noindent\fcolorbox{red}{red!3}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{\footnotesize\color{red!55!black}\textbf{[PLACEHOLDER: #1]} #2}}\par\smallskip}
+
+%% ---------------------------------------------------------------------------
+%% Envelope placement: THE single switch. \envelopemaintrue keeps Sec. 4.6 (and Prop. 2) in the main paper;
+%% \envelopemainfalse moves them to Supp. D and leaves a one-sentence pointer, a limitation sentence and no
+%% A-dual+env row in the main paper. Recompile both main.tex and supplement.tex after changing it.
+%% ---------------------------------------------------------------------------
+\newif\ifenvelopemain
+\envelopemaintrue
+\newcommand{\envref}{\ifenvelopemain\cref{sec:env}\else Supp.~D\fi}
+
+%% ---------------------------------------------------------------------------
+%% Method names (rename here only).
+%% ---------------------------------------------------------------------------
+\newcommand{\mDual}{\textsf{A-dual}\xspace}
+\newcommand{\mDualBoth}{\textsf{A-dual-both}\xspace}
+\newcommand{\mDualEnv}{\textsf{A-dual+env}\xspace}
+\newcommand{\mDistSplit}{\textsf{A-dist-split}\xspace}
+\newcommand{\mDistBoth}{\textsf{A-dist-both}\xspace}
+\newcommand{\mLocal}{\textsf{A-local}\xspace}
+\newcommand{\mLocalSplit}{\textsf{A-local-split}\xspace}
+\newcommand{\mSplitCP}{\textsf{split-CP}\xspace}
+\newcommand{\omnidc}{OMNI-DC\xspace}
+
+%% ---------------------------------------------------------------------------
+%% Notation.
+%% ---------------------------------------------------------------------------
+\newcommand{\yhat}{\hat{y}}
+\newcommand{\ytil}{\tilde{y}}
+\newcommand{\dtil}{\tilde{d}}
+\newcommand{\cA}{\mathcal{A}}
+\newcommand{\cP}{\mathcal{P}}
+\newcommand{\cS}{\mathcal{S}}
+\newcommand{\cQ}{\mathcal{Q}}
+\newcommand{\cU}{\mathcal{U}}
+\newcommand{\cE}{\mathcal{E}}
+\newcommand{\cB}{\mathcal{B}}
+\newcommand{\qhat}{\hat{q}}
+\newcommand{\sg}{s_{\gamma}}
+\newcommand{\Cov}{\mathrm{Cov}}
+\newcommand{\E}{\mathbb{E}}
+\renewcommand{\P}{\mathbb{P}}
+\newcommand{\1}{\mathbf{1}}
+\newcommand{\med}{\operatorname{med}}
+\newcommand{\BetaBin}{\operatorname{BetaBin}}
+\newcommand{\BetaD}{\operatorname{Beta}}
+
+%% Theorem environments (numbered within the paper; the supplement restates them with the same numbers).
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}

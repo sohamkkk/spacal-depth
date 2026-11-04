@@ -1,0 +1,12 @@
+\begin{abstract}
+Monocular metric depth foundation models predict metres at every pixel but say little reliable about their error, and much of that error is one scale factor per image.
+A few sparse metric measurements, as delivered by a phone LiDAR or a few-beam scanner, remove most of it; we call this setting sparse-guided monocular depth.
+Conformal calibration inside each image can then attach intervals with a per-image coverage guarantee, but only if the measurements are placed uniformly at random.
+Real sensors place them on scan lines, in clusters, on edges or only at short range, and such structured measurements, reused for calibration, silently void the guarantee: with clustered measurements, per-image calibration covers only \NumLocalClusterCovLo--\NumLocalClusterCovHi{} of pixels at a $0.9$ target.
+We separate the two roles.
+Structured anchors that follow the sensor build the prediction; a small budget of uniformly random probes, never seen by the predictor, sets a per-image conformal threshold.
+The per-image guarantee of this calibration layer holds for any anchor layout and any probe-independent centre without calibration images, and the number of probes sets its spread across images.
+On NYU and KITTI with three frozen models and five layouts it reaches nominal coverage and, in exploratory runs, is \NumDualWidthGainLo--\NumDualWidthGainHi\% narrower than a hull-based per-image baseline.
+On ARKitScenes the layer runs unchanged on a depth-completion network, the better centre under uniform anchors, while the frozen model with our anchor-built centre is better under clustered anchors.
+With iPad LiDAR checked against laser scans, probes certify what they measure: laser probes certify the depth even when the anchors are iPad readings, whereas iPad probes certify the iPad reading, and under uniform anchors their coverage of the depth falls well below the target.
+\end{abstract}
