@@ -45,12 +45,13 @@ PROTOCOLS: dict[str, Protocol] = {
     "diode_indoor": Protocol("diode_indoor", max_depth=10.0, stride=2),
     "diode_outdoor": Protocol("diode_outdoor", max_depth=80.0, stride=2),
     "eth3d": Protocol("eth3d", max_depth=80.0, stride=2),  # after the loader's 4x reduction: 756 x 504
+    "arkitscenes": Protocol("arkitscenes", max_depth=10.0),  # after the loader's 3x reduction: 480 x 640
 }
 
 # which Depth-Anything-V2 metric checkpoint family matches each dataset's domain (ETH3D mixes both; the
 # outdoor depth range is used for its depth groups, and DA-V2 is not run on it)
 DOMAIN = {"nyu": "indoor", "kitti": "outdoor", "diode_indoor": "indoor", "diode_outdoor": "outdoor",
-          "eth3d": "outdoor"}
+          "eth3d": "outdoor", "arkitscenes": "indoor"}
 
 # NYU raw 894-class ids (1-based) of hard-case classes, from the labelled .mat `names`
 NYU_MIRROR_IDS = (122,)

@@ -13,7 +13,7 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 ds=$1
 case "$ds" in
-  nyu|diode_indoor) domain=indoor ;;
+  nyu|diode_indoor|arkitscenes) domain=indoor ;;
   kitti|diode_outdoor) domain=outdoor ;;
   eth3d) domain= ;;
   *) echo "unknown dataset $ds"; exit 2 ;;

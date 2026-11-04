@@ -1,6 +1,6 @@
 """Dataset factory (imports lazily so h5py/PIL are only needed for the dataset used)."""
 
-DATASETS = ("nyu", "kitti", "diode_indoor", "diode_outdoor", "eth3d")
+DATASETS = ("nyu", "kitti", "diode_indoor", "diode_outdoor", "eth3d", "arkitscenes")
 
 
 def build_dataset(name: str):
@@ -20,4 +20,8 @@ def build_dataset(name: str):
         from src.data.eth3d import ETH3D
 
         return ETH3D()
+    if name == "arkitscenes":
+        from src.data.arkitscenes import ARKitScenes
+
+        return ARKitScenes()
     raise ValueError(f"unknown dataset {name!r}; choose from {DATASETS}")

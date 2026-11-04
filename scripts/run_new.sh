@@ -9,6 +9,19 @@
 #   PARTS=e15 bash scripts/run_new.sh          # calibration vs test anchor layout, LSCP; not in the default PARTS
 #   PARTS=e16 bash scripts/run_new.sh          # noisy and real-LiDAR anchors (lidar only on tables with the field,
 #                                              # see scripts/add_kitti_lidar.py); not in the default PARTS
+#   PARTS=e16 LIDAR_ZIP=data/kitti/data_depth_velodyne.zip bash scripts/run_new.sh   # adds the field first
+#   PARTS=e16 LIDAR_ZIP=... E16_EXP=e16_lidar E16_SOURCES="clean lidar" \
+#     E16_PAIRS="kitti:dav2-outdoor-large kitti:unidepthv2-large kitti:depthpro" bash scripts/run_new.sh
+#   PARTS=e17 bash scripts/run_new.sh          # A-dual (src/calibrators/dual.py), 20 probes, gamma 0.5
+#                                              # (results/e17_p20_g05/); not in the default PARTS
+#   PARTS=e17 E17_PROBES="10 40" bash scripts/run_new.sh   # probe-count ablation (results/e17_p<probes>_g05/)
+#   PARTS=e17 E17_PATTERNS="uniform rows cluster" E17_PAIRS="eth3d:depthpro eth3d:unidepthv2-large \
+#     diode_indoor:depthpro diode_outdoor:depthpro" bash scripts/run_new.sh   # few-scene datasets
+#   PARTS=e18 bash scripts/run_new.sh          # A-dual pred/probe source factorial (needs lidar field);
+#                                              # results/e18_sensor/; not in the default PARTS
+#   PARTS=e18 E18_SEEDS=20 E18_PATTERNS="uniform cluster" \
+#     E18_PAIRS="arkitscenes:dav2-indoor-large arkitscenes:unidepthv2-large arkitscenes:depthpro" \
+#     bash scripts/run_new.sh
 #   PARTS=metric3d bash scripts/run_new.sh     # Metric3D v2 tables (all five datasets), main study, E5, E11
 #   PARTS=eth3d bash scripts/run_new.sh        # ETH3D tables and main study for UniDepthV2 and Depth Pro
 # e12-e16 include the Depth Pro pairs whenever their tables exist; for Metric3D pass e.g.
@@ -17,7 +30,12 @@
 #      E13_DRAWS (3), E13_PAIRS (all six), SEEDS (main, 20), E5_SEEDS (10),
 #      E14_SEEDS (3), E14_DRAWS (2), E14_PAIRS (all six), E14_PATTERNS (all five),
 #      E15_SEEDS (3), E15_DRAWS (2), E15_PAIRS (all six), E15_PATTERNS (all five test layouts),
-#      E16_SEEDS (3), E16_DRAWS (2), E16_PAIRS (all six), E16_PATTERNS (uniform).
+#      E16_SEEDS (3), E16_DRAWS (2), E16_PAIRS (all six), E16_PATTERNS (uniform),
+#      E16_SOURCES (all), E16_EXP (e16; results/<E16_EXP>/, logs/<E16_EXP>_*.log),
+#      E17_PROBES (20), E17_PATTERNS (all five), E17_PAIRS (all six), E17_KS (50 200), E17_SEEDS (3), E17_DRAWS (2),
+#      E17_GAMMA (0.5; A-dual scale shrinkage, 1 = the unshrunk scale of results/e17_p20/),
+#      E18_SEEDS (20), E18_DRAWS (2), E18_KS (200), E18_PATTERNS (uniform cluster), E18_PAIRS (arkitscenes × 3),
+#      E18_EXP (e18_sensor), E18_GAMMA (0.5), E18_PROBES (20).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 PY=${PY:-python}
@@ -119,13 +137,49 @@ fi
 
 if want e16; then
   echo "=== $(date -Is) E16 noisy and LiDAR anchors"
+  if [[ -n "${LIDAR_ZIP:-}" ]]; then
+    $PY -m scripts.add_kitti_lidar --zip "$LIDAR_ZIP" || echo "!!! FAILED: add_kitti_lidar (lidar source skipped)"
+  fi
   for pattern in ${E16_PATTERNS:-uniform}; do
     for pair in ${E16_PAIRS:-$BASE_PAIRS $DP_PAIRS}; do
       ds=${pair%%:*}; model=${pair#*:}
       have "$ds" "$model" || { echo "skip e16 $ds/$model (no table)"; continue; }
-      spawn "e16_${ds}__${model}__${pattern}" $PY -W ignore -m experiments.e16_noisy \
+      spawn "${E16_EXP:-e16}_${ds}__${model}__${pattern}" $PY -W ignore -m experiments.e16_noisy \
         --pattern "$pattern" --dataset "$ds" --model "$model" --ks 20 200 --alphas 0.1 \
-        --n-seeds "${E16_SEEDS:-3}" --draws "${E16_DRAWS:-2}"
+        --n-seeds "${E16_SEEDS:-3}" --draws "${E16_DRAWS:-2}" --exp-id "${E16_EXP:-e16}" \
+        ${E16_SOURCES:+--sources $E16_SOURCES}
+    done
+  done
+fi
+
+if want e17; then
+  echo "=== $(date -Is) E17 dual anchors (A-dual vs A-dist-both on budget-split draws)"
+  gamma=${E17_GAMMA:-0.5}; gtag=g${gamma//./}
+  for probes in ${E17_PROBES:-20}; do
+    for pattern in ${E17_PATTERNS:-uniform rows cluster edges near}; do
+      for pair in ${E17_PAIRS:-$BASE_PAIRS $DP_PAIRS}; do
+        ds=${pair%%:*}; model=${pair#*:}
+        have "$ds" "$model" || { echo "skip e17 $ds/$model (no table)"; continue; }
+        spawn "e17_p${probes}_${gtag}_${ds}__${model}__${pattern}" $PY -W ignore -m experiments.e11_anchors \
+          --exp-id "e17_p${probes}_${gtag}" --pattern "$pattern" --dataset "$ds" --model "$model" --ks ${E17_KS:-50 200} \
+          --no-oracle --anchor-dist --dist-kinds median --dual --dual-gamma "$gamma" --dist-k-random "$probes" \
+          --n-seeds "${E17_SEEDS:-3}" --draws "${E17_DRAWS:-2}"
+      done
+    done
+  done
+fi
+
+if want e18; then
+  echo "=== $(date -Is) E18 A-dual pred/probe source factorial (clean×lidar)"
+  ARKIT_PAIRS="arkitscenes:dav2-indoor-large arkitscenes:unidepthv2-large arkitscenes:depthpro"
+  for pattern in ${E18_PATTERNS:-uniform cluster}; do
+    for pair in ${E18_PAIRS:-$ARKIT_PAIRS}; do
+      ds=${pair%%:*}; model=${pair#*:}
+      have "$ds" "$model" || { echo "skip e18 $ds/$model (no table)"; continue; }
+      spawn "${E18_EXP:-e18_sensor}_${ds}__${model}__${pattern}" $PY -W ignore -m experiments.e18_sensor_dual \
+        --exp-id "${E18_EXP:-e18_sensor}" --pattern "$pattern" --dataset "$ds" --model "$model" \
+        --ks ${E18_KS:-200} --dist-k-random "${E18_PROBES:-20}" --dual-gamma "${E18_GAMMA:-0.5}" \
+        --n-seeds "${E18_SEEDS:-20}" --draws "${E18_DRAWS:-2}"
     done
   done
 fi
@@ -158,6 +212,6 @@ if (( ${#EXTRA[@]} )); then
   echo "=== $(date -Is) summarize main study (all models)"
   $PY -m experiments.summarize --exp-id main || echo "!!! FAILED: summarize"
 fi
-grep -l "Traceback" logs/e12_*.log logs/e13_*.log logs/e14_*.log logs/e15_*.log logs/e16_*.log logs/main_*.log \
-  logs/e5_*.log logs/e11_*.log 2>/dev/null && echo "some jobs crashed (see above)" || true
-echo "=== $(date -Is) done. results/e12 … results/e16, results/main/_summary"
+grep -l "Traceback" logs/e12_*.log logs/e13_*.log logs/e14_*.log logs/e15_*.log logs/e16_*.log logs/e17_*.log \
+  logs/e18_*.log logs/main_*.log logs/e5_*.log logs/e11_*.log 2>/dev/null && echo "some jobs crashed (see above)" || true
+echo "=== $(date -Is) done. results/e12 … results/e17_p*, results/e18_*, results/main/_summary"

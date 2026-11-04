@@ -15,7 +15,7 @@ from src.config import PREPARED_ROOT, REPO_ROOT, RESULTS_ROOT
 from src.data.prepared import PixelTable
 from src.data.splits import exchange_units, scene_level_split  # noqa: F401  (exchange_units re-exported)
 
-DEFAULT_STRIDE = {"nyu": 4, "kitti": 2, "diode_indoor": 2, "diode_outdoor": 2, "eth3d": 4}
+DEFAULT_STRIDE = {"nyu": 4, "kitti": 2, "diode_indoor": 2, "diode_outdoor": 2, "eth3d": 4, "arkitscenes": 8}
 
 
 def table_path(dataset: str, model: str) -> Path:

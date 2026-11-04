@@ -7,5 +7,6 @@ export HF_HOME=${HF_HOME:-$PWD/.hf_cache}
 export HF_HUB_OFFLINE=1                  # compute nodes usually lack internet; weights come from prefetch_models
 export TORCH_HOME=${TORCH_HOME:-$PWD/.torch_cache}   # torch.hub repo + weights (Metric3D)
 export PYTHONUNBUFFERED=1
+export E18_JOBS=${E18_JOBS:-4}           # confirm_all: all 4 E18 configs per seed at once (peak ~16 GB for 3)
 mkdir -p logs
 echo "host=$(hostname) job=${SLURM_JOB_ID:-none} task=${SLURM_ARRAY_TASK_ID:-none} gpus=${CUDA_VISIBLE_DEVICES:-none} cpus=$(nproc)"

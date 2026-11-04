@@ -161,6 +161,9 @@ def build_table(
             "edge": edge[keep],
             "label": g["labels"][keep].astype(np.uint16) if "labels" in g else np.zeros(n_valid, np.uint16),
         }
+        if "lidar" in g:
+            per_pixel["lidar"] = g["lidar"][keep].astype(np.float32)
+            per_pixel["lidar_conf"] = g["lidar_conf"][keep].astype(np.uint8)
         per_pixel.update({k: v[keep].astype(np.float32) for k, v in maps.items()})
         for k, v in per_pixel.items():
             pix_lists.setdefault(k, []).append(v)

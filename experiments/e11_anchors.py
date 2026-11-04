@@ -30,6 +30,15 @@ E14 (A-dist, src/calibrators/anchor_dist.py) adds, with --dist-kinds:
     python -m experiments.e11_anchors --exp-id e14 --pattern cluster --dataset nyu --model depthpro \
         --ks 5 20 50 200 --no-oracle --anchor-dist --dist-kinds knn kernel bilateral
 
+E17 adds, with --dual (src/calibrators/dual.py), on the same budget-split draw:
+  A-dual          A-dist-<--dist-both-kind> fields from the structured anchors only, one per-image threshold
+                  from the k_random probes (columns dual_kind, dual_gamma); per-image guarantee, no
+                  calibration images; base S2-log only
+  A-dual-both     hull of A-dual and A-dist-split: A-dual's per-image guarantee and A-dist-split's coverage
+                  by distance to the nearest anchor
+    python -m experiments.e11_anchors --exp-id e17 --pattern cluster --dataset nyu --model depthpro \
+        --ks 50 200 --no-oracle --anchor-dist --dist-kinds median --dual --dist-k-random 20
+
 Outputs (results/<exp-id>/<dataset>__<model>[__<pattern>]/): runs.csv, cond.csv, images.csv, summary.{csv,md}, spec.json
 """
 
@@ -51,6 +60,7 @@ from src.calibrators.anchors import (
     nearest_anchor_distance,
 )
 from src.calibrators.crc import InfeasibleRiskError, crc_lambda_exact, crc_lambda_exact_units
+from src.calibrators.dual import dual_interval, probe_quantile, split_roles
 from src.data.prepared import PixelTable
 from src.data.splits import exchange_units
 from src.metrics.interval_metrics import _per_image_mean, evaluate_intervals
@@ -176,7 +186,8 @@ def a_dist(cfg, fields, base_s, draws, tables, d, half_a, alpha, args):
 def run_seed(table, seed, args, log):
     head, cal, test = split_tables(table, seed)
     d = {n: log_err(t) for n, t in (("head", head), ("cal", cal), ("test", test))}
-    dist_on = bool(args.dist_kinds)
+    dist_on = bool(args.dist_kinds) or args.dual
+    lean = args.lean
     if dist_on:
         # A-dist model fitting (bandwidths, tau, g, bin merges) on a head-train subset, for speed
         n_fit = min(head.n_images, args.dist_head_images)
@@ -187,10 +198,12 @@ def run_seed(table, seed, args, log):
         d["head_fit"] = d["head"][fit_px]
         half_a = np.random.default_rng([seed, 8]).random(head_fit.n_images) < 0.5
     t0 = time.perf_counter()
-    raw = LearnedQuantileScale(quantile=1 - args.beta, seed=seed).fit(head)
-    shape = LearnedQuantileScale(quantile=1 - args.beta, seed=seed).fit(shape_target_table(head))
     s = {"S2-log": {n: np.ones(t.n_pixels) for n, t in (("head", head), ("cal", cal), ("test", test))}}
-    for name, model in (("S5-learned", raw), ("S5-shape", shape)):
+    learned = []
+    if not lean:
+        learned = [("S5-learned", LearnedQuantileScale(quantile=1 - args.beta, seed=seed).fit(head)),
+                   ("S5-shape", LearnedQuantileScale(quantile=1 - args.beta, seed=seed).fit(shape_target_table(head)))]
+    for name, model in learned:
         s[name] = {n: model.predict(t) for n, t in (("head", head), ("cal", cal), ("test", test))}
         # bounded away from 0: a near-zero s gives an anchor or calibration pixel a huge normalised score
         lo, hi = np.quantile(s[name]["head"], [0.01, 0.99])
@@ -222,7 +235,7 @@ def run_seed(table, seed, args, log):
     budgets = list(args.ks) + (["oracle"] if args.oracle else [])
     for k in budgets:
         n_draws = 1 if k in (0, "oracle") else args.draws
-        bases = ["S2-log", "S5-learned"] if k == 0 else ["S2-log", "S5-shape"]
+        bases = ["S2-log"] if lean else (["S2-log", "S5-learned"] if k == 0 else ["S2-log", "S5-shape"])
         for draw_i in range(n_draws):
             rng = np.random.default_rng([seed, 0 if k == "oracle" else int(k) + 1, draw_i])
             if k == "oracle":
@@ -233,10 +246,10 @@ def run_seed(table, seed, args, log):
             vt, st = eval_view(test, dt.eval)
             units_cal = exchange_units(vc)
             img_c, img_t = image_of(cal), image_of(test)
-            dh = draw("head", head, k, rng) if isinstance(k, int) and k >= 3 else None
+            dh = draw("head", head, k, rng) if isinstance(k, int) and k >= 3 and not lean else None
             dist_bin = dist_bins(dt, st) if isinstance(k, int) and k > 0 else None
             # A-dist: per kind, bandwidths and fields once per draw; budget-split draw for A-dist-both
-            dist_prep, split, views = {}, None, {}
+            dist_prep, split, views, dual = {}, None, {}, None
             if dist_on and isinstance(k, int) and k > 0:
                 # own stream, so the other methods' results do not depend on --dist-kinds
                 rng_d = np.random.default_rng([seed, int(k) + 1, draw_i, 99])
@@ -253,6 +266,13 @@ def run_seed(table, seed, args, log):
                                           args.alphas[0], sdraws, tables, d))
                     views = {n: (vt2, dist_bins(sdraws["test"], st2))
                              for n in ("A-local-split", "A-dist-split", "A-dist-both", "A-hybrid-split", "A-both-split")}
+                    if args.dual:
+                        roles = {n: split_roles(sdraws[n], d[n], tables[n].offsets) for n in ("cal", "test", "head_fit")}
+                        pdraws = {n: r[0] for n, r in roles.items()}
+                        dual = (pdraws, roles["test"][1],
+                                prepare_dist(args.dist_both_kind, head_fit, d["head_fit"], half_a, args.alphas[0],
+                                             pdraws, tables, d))
+                        views["A-dual"] = views["A-dual-both"] = views["A-dual-rmax"] = views["A-dist-both"]
                     local_split = {}
                     for alpha in args.alphas:
                         q2 = local_halfwidth(d["test"], s["S2-log"]["test"], test.offsets, sdraws["test"], alpha)
@@ -271,9 +291,10 @@ def run_seed(table, seed, args, log):
                 for alpha in args.alphas:
                     tag = {**base_tag, "k": str(k), "draw": draw_i, "base": base, "alpha": alpha}
                     methods = {}
-                    r = np.abs(d["cal"] - dc.shift[img_c]) / s_c
-                    lam = crc_units(r[sc], vc.offsets, units_cal, alpha)
-                    methods["A-rescale"] = interval_from(test, dt.shift, lam * s_t[st], st)
+                    if not lean:
+                        r = np.abs(d["cal"] - dc.shift[img_c]) / s_c
+                        lam = crc_units(r[sc], vc.offsets, units_cal, alpha)
+                        methods["A-rescale"] = interval_from(test, dt.shift, lam * s_t[st], st)
                     if dh is not None:
                         tau = pick_tau(head, d["head"], s[base]["head"], dh, alpha, rng)
                         den_c = s_c * (dc.sigma[img_c] + tau)
@@ -298,21 +319,50 @@ def run_seed(table, seed, args, log):
                         tag = {**tag, "dist_split_kind": cfg2.kind}
                         ld, hd = a_dist(cfg2, fields2, s[base], sdraws, tables, d, half_a, alpha, args)
                         ll, hl = local_split[alpha][0]
-                        # A-hybrid on the same split draw: the like-for-like reference for A-dist-split / -both
-                        sc_, st_ = sdraws["cal"], sdraws["test"]
-                        tau2 = pick_tau(head_fit, d["head_fit"], s[base]["head_fit"], sdraws["head_fit"], alpha, rng_d)
-                        den_c = s_c * (sc_.sigma[img_c] + tau2)
-                        r = np.abs(d["cal"] - sc_.shift[img_c]) / den_c
-                        lam2 = crc_units(r[sc2], vc2.offsets, units_c2, alpha)
-                        lh, hh = interval_from(test, st_.shift, lam2 * (s_t * (st_.sigma[img_t] + tau2))[st2], st2)
+                        if not lean:
+                            # A-hybrid on the same split draw: the like-for-like reference for A-dist-split / -both
+                            sc_, st_ = sdraws["cal"], sdraws["test"]
+                            tau2 = pick_tau(head_fit, d["head_fit"], s[base]["head_fit"], sdraws["head_fit"], alpha,
+                                            rng_d)
+                            den_c = s_c * (sc_.sigma[img_c] + tau2)
+                            r = np.abs(d["cal"] - sc_.shift[img_c]) / den_c
+                            lam2 = crc_units(r[sc2], vc2.offsets, units_c2, alpha)
+                            lh, hh = interval_from(test, st_.shift, lam2 * (s_t * (st_.sigma[img_t] + tau2))[st2], st2)
+                            methods["A-hybrid-split"] = (lh, hh)
+                            methods["A-both-split"] = (np.minimum(lh, ll), np.maximum(hh, hl))
                         if base == "S2-log":
                             methods["A-local-split"] = (ll, hl)
-                        methods["A-hybrid-split"] = (lh, hh)
-                        methods["A-both-split"] = (np.minimum(lh, ll), np.maximum(hh, hl))
                         methods["A-dist-split"] = (ld, hd)
                         methods["A-dist-both"] = (np.minimum(ld, ll), np.maximum(hd, hl))
                         local_inf.update({n: local_split[alpha][1]
                                           for n in ("A-local-split", "A-dist-both", "A-both-split")})
+                    # S2-log only, as A-local: with ~20 probes the threshold is near the largest normalised
+                    # probe residual, and a learned base with a wide range turns that into enormous widths
+                    if dual is not None and base == "S2-log":
+                        pdraws, probes, (cfg3, fields3, _) = dual
+                        tag = {**tag, "dual_kind": cfg3.kind, "dual_gamma": args.dual_gamma}
+                        model3, _ = ad.fit_dist_model(head_fit, d["head_fit"], s[base]["head_fit"], pdraws["head_fit"],
+                                                      cfg3, alpha, half_a, use_g=not args.dist_no_g, single_bin=True,
+                                                      fields=fields3["head_fit"])
+                        q3 = probe_quantile(model3, d["test"], s_t, fields3["test"], probes, test.offsets, alpha,
+                                            args.dual_gamma)
+                        lo3, hi3 = dual_interval(model3, test.pix["pred"], s_t, fields3["test"], q3, test.offsets,
+                                                 args.dual_gamma)
+                        methods["A-dual"] = (lo3[st2], hi3[st2])
+                        local_inf["A-dual"] = float(np.mean(~np.isfinite(q3)))
+                        if args.dual_rmax:
+                            # rank r = n (the largest probe score): ceil((n + 1)(1 - a)) = n for a in [1, 2)/(n + 1)
+                            a_r = 1.5 / (args.dist_k_random + 1)
+                            q4 = probe_quantile(model3, d["test"], s_t, fields3["test"], probes, test.offsets, a_r,
+                                                args.dual_gamma)
+                            lo4, hi4 = dual_interval(model3, test.pix["pred"], s_t, fields3["test"], q4, test.offsets,
+                                                     args.dual_gamma)
+                            methods["A-dual-rmax"] = (lo4[st2], hi4[st2])
+                            local_inf["A-dual-rmax"] = float(np.mean(~np.isfinite(q4)))
+                        if "A-dist-split" in methods:
+                            (ld, hd) = methods["A-dist-split"]
+                            methods["A-dual-both"] = (np.minimum(lo3[st2], ld), np.maximum(hi3[st2], hd))
+                            local_inf["A-dual-both"] = local_inf["A-dual"]
                     for name, (lo, hi) in methods.items():
                         view, dbin = views.get(name, (vt, dist_bin))
                         m, cov_img = score_row(view, lo, hi, alpha, args.beta)
@@ -354,8 +404,9 @@ def coverage_by_distance(view, lo, hi, dist_bin, tag, min_px: int = 10) -> list[
 def summarize(runs: pd.DataFrame, cond: pd.DataFrame) -> pd.DataFrame:
     keys = ["k", "base", "method", "alpha"]
     cols = ["cov_image_mean", "cov_scene_mean", "cov_image_sd", "cov_image_p10", "frac_img_cov_below_1ma_m10",
-            "v4_rate", "rel_width", "median_rel_width", "rel_interval_score", "frac_infinite",
-            "lower_miss_mean", "lower_miss_img_p90"]
+            "v4_rate", "rel_width", "median_rel_width", "rel_interval_score", "rel_interval_score_robust",
+            "rel_interval_score_imgmed", "frac_img_short", "frac_infinite", "frac_uninformative", "lower_miss_mean",
+            "lower_miss_img_p90"]
     summ = runs.groupby(keys)[cols].mean()
     summ["cov_image_mean_se"] = runs.groupby(keys)["cov_image_mean"].std() / np.sqrt(runs.groupby(keys).size())
     summ = summ.join(cond.groupby(keys)[["cond_short_frac", "cond_p05"]].mean()).reset_index()
@@ -399,6 +450,16 @@ def main():
     ap.add_argument("--dist-k-random", type=int, default=20,
                     help="uniform anchors reserved for A-local-split / A-dist-both (run when k > this)")
     ap.add_argument("--dist-both-kind", choices=(*ad.KINDS, "auto"), default="auto")
+    ap.add_argument("--dual", action="store_true",
+                    help="E17: also A-dual (structured anchors predict, the k_random probes calibrate per image)")
+    ap.add_argument("--dual-gamma", type=float, default=0.5,
+                    help="A-dual scale shrinkage toward the per-image median (1 = the plain A-dist scale)")
+    ap.add_argument("--dual-rmax", action="store_true",
+                    help="also A-dual-rmax: per-image threshold = the largest probe score (rank r = n)")
+    ap.add_argument("--lean", action="store_true",
+                    help="S2-log base only; skip A-rescale / A-hybrid / A-both(-split) and the learned scale fits")
+    ap.add_argument("--seed-start", type=int, default=None,
+                    help="run seeds seed_start .. seed_start + n_seeds - 1 (output dir gets a __seeds<a>_<b> suffix)")
     ap.add_argument("--dist-head-images", type=int, default=200, help="head-train images used to fit A-dist")
     ap.add_argument("--dist-single-bin", action="store_true", help="ablation: one lambda for all distances")
     ap.add_argument("--dist-no-g", action="store_true", help="ablation: no distance inflation g")
@@ -417,12 +478,15 @@ def main():
         keep = np.random.default_rng(12345).choice(uniq, max(3, int(round(args.unit_frac * len(uniq)))), replace=False)
         table = table.subset(np.flatnonzero(np.isin(units, keep)))
     suffix = "" if args.pattern == "uniform" else f"__{args.pattern}"
+    seed0 = args.seed_start or 0
+    if args.seed_start is not None:
+        suffix += f"__seeds{seed0}_{seed0 + args.n_seeds - 1}"
     out = results_dir(args.exp_id, f"{args.dataset}__{args.model}{suffix}")
     write_spec(out, {**vars(args), "n_images": table.n_images, "n_pixels": table.n_pixels})
     print(f"{args.dataset}/{args.model}: {table.n_images} images, {table.n_pixels:,} px; ks={args.ks} pattern={args.pattern}")
 
     rows, cond, images, dists = [], [], [], []
-    for seed in range(args.n_seeds):
+    for seed in range(seed0, seed0 + args.n_seeds):
         t0 = time.perf_counter()
         r, c, im, dr = run_seed(table, seed, args, print)
         rows += r

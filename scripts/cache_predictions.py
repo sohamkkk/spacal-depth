@@ -16,6 +16,7 @@ Usage (remote):
 
 import argparse
 import json
+import os
 import platform
 import time
 from datetime import datetime, timezone
@@ -42,9 +43,20 @@ def write_gt(sample: dict, protocol, out_path, save_rgb: bool) -> None:
     }
     if "labels" in sample:
         payload["labels"] = crop(sample["labels"], protocol).astype(np.uint16)
+    if "lidar" in sample:  # a real sensor next to the GT (ARKitScenes iPad LiDAR); 0 = no value
+        payload["lidar"] = crop(sample["lidar"], protocol).astype(np.float32)
+        payload["lidar_conf"] = crop(sample["lidar_conf"], protocol).astype(np.uint8)
     if save_rgb:
         payload["rgb"] = crop(sample["rgb"], protocol).astype(np.uint8)
-    np.savez_compressed(out_path, **payload)
+    save_npz(out_path, **payload)
+
+
+def save_npz(path, **arrays) -> None:
+    """Write via a temporary file and rename, so an interrupted run never leaves a truncated .npz."""
+    tmp = path.parent.parent / ".partial" / f"{os.getpid()}__{path.parent.name}__{path.name}"
+    tmp.parent.mkdir(exist_ok=True)
+    np.savez_compressed(tmp, **arrays)
+    os.replace(tmp, path)
 
 
 def library_versions() -> dict:
@@ -102,6 +114,10 @@ def main():
     n = min(len(dataset), args.limit) if args.limit else len(dataset)
     t_start, done, grad_oom = time.perf_counter(), 0, 0
     for idx in range(n):
+        if hasattr(dataset, "sample_id"):  # resume without decoding samples that are already cached
+            sid = dataset.sample_id(idx)
+            if (gt_dir / f"{sid}.npz").exists() and (out_dir / f"{sid}.npz").exists():
+                continue
         sample = dataset[idx]
         sid = sample["sample_id"]
         gt_path, pred_path = gt_dir / f"{sid}.npz", out_dir / f"{sid}.npz"
@@ -137,7 +153,7 @@ def main():
                 timings.pop("t_grad", None)
                 grad_oom += 1
                 print(f"[{sid}] gradient uncertainty OOM; cached without grad_unc", flush=True)
-        np.savez_compressed(pred_path, **payload, **{k: np.float32(v) for k, v in timings.items()})
+        save_npz(pred_path, **payload, **{k: np.float32(v) for k, v in timings.items()})
         done += 1
         if done % 50 == 0:
             rate = done / (time.perf_counter() - t_start)

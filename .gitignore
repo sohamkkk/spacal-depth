@@ -33,6 +33,22 @@ results_quick/
 results_depthpro/
 results_new/
 prepared_new/
+results_omnidc/
+/e19c_absrel.csv
+*.tgz
+
+# LaTeX build files
+*.aux
+*.log
+*.out
+*.blg
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+# course template as shipped (copied into report_neurips/)
+Neurips Styles/
+__MACOSX/
 
 # personal, agent and planning files
 .cursor/
@@ -41,3 +57,4 @@ CONVERSATION_LOG.md
 details.txt
 docs/CVPR_PLAN.md
 docs/REVIEWER_ASSESSMENT.md
+review/

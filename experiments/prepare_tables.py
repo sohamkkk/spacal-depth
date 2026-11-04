@@ -24,7 +24,7 @@ def discover(datasets=DATASETS) -> list[tuple[str, str, tuple[str, ...]]]:
         root = CACHE_ROOT / ds
         if not root.exists() or is_pruned(ds):
             continue
-        tags = sorted(p.name for p in root.iterdir() if p.is_dir() and p.name != "gt")
+        tags = sorted(p.name for p in root.iterdir() if p.is_dir() and p.name != "gt" and not p.name.startswith("."))
         for tag in tags:
             ens: tuple[str, ...] = ()
             if tag.startswith("dav2-") and tag.endswith("-large"):

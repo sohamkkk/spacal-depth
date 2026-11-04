@@ -342,6 +342,132 @@ def fig_e15(alpha=0.1, k=50):
     save(fig, f"e15_layouts__k{k}")
 
 
+E16_SOURCES = ("clean", "gauss:0.02", "gauss:0.05", "outlier:0.05", "outlier:0.1", "bias:0.05", "lidar")
+E16_METHODS = ("A-rescale", "A-rescale@clean", "A-hybrid", "A-hybrid@clean", "A-dist", "A-dist@clean",
+               "A-local", "LSCP", "A-both", "A-dist-both")
+
+
+def fig_e16(alpha=0.1, pattern="uniform"):
+    """Noisy anchors: coverage of each method (rows) under each anchor source (columns) at k = 20 and 200, and
+    median width at k = 200, mean over dataset/model pairs."""
+    summ = []
+    for p in glob.glob(str(RESULTS_ROOT / "e16" / f"*__{pattern}" / "summary.csv")):
+        summ.append(pd.read_csv(p).assign(pair=p.split("/")[-2]))
+    if not summ:
+        return
+    s = pd.concat(summ, ignore_index=True)
+    s = s[np.isclose(s.alpha, alpha)]
+    sources = [x for x in E16_SOURCES if x in set(s.source)]
+    fig, axes = plt.subplots(1, 6, figsize=(13.5, 3.8),
+                             gridspec_kw={"width_ratios": [1, 1, 0.05, 0.22, 1, 0.05], "wspace": 0.25})
+    axes[3].axis("off")
+    panels = ((axes[0], 20, "cov_image_mean"), (axes[1], 200, "cov_image_mean"), (axes[4], 200, "median_rel_width"))
+    for ax, k, col in panels:
+        m = (s[s.k == k].pivot_table(index="method", columns="source", values=col, aggfunc="mean")
+             .reindex(index=list(E16_METHODS), columns=sources))
+        if col == "cov_image_mean":
+            im = ax.imshow(m.values, cmap="RdBu", vmin=1 - alpha - 0.12, vmax=1 - alpha + 0.12, aspect="auto")
+            cax, label = axes[2], f"image-avg coverage (target {1 - alpha:.2f})"
+        else:
+            im = ax.imshow(m.values, cmap="viridis", aspect="auto")
+            cax, label = axes[5], "median relative width"
+        for i in range(m.shape[0]):
+            for j in range(m.shape[1]):
+                v = m.values[i, j]
+                if np.isfinite(v):
+                    dark = abs(v - (1 - alpha)) > 0.08 if col == "cov_image_mean" else v < np.nanmean(m.values)
+                    ax.text(j, i, f"{v:.2f}", ha="center", va="center", fontsize=6.5, color="w" if dark else "k")
+        ax.set_xticks(range(len(sources)), sources, rotation=35, fontsize=7)
+        ax.set_yticks(range(len(E16_METHODS)), E16_METHODS if ax is axes[0] else [], fontsize=7)
+        ax.set_xlabel("anchor source", fontsize=8)
+        ax.set_title(f"{'coverage' if col == 'cov_image_mean' else 'width'}, k = {k}", fontsize=9)
+        cb = fig.colorbar(im, cax=cax)
+        cb.set_label(label, fontsize=7)
+        cb.ax.tick_params(labelsize=6)
+    save(fig, f"e16_noisy__{pattern}")
+
+
+E17_METHODS = (("A-local", "A-local", "tab:green", "^"), ("A-dist-split", "A-dist-split", "tab:purple", "o"),
+               ("A-dual", "A-dual", "tab:blue", "s"), ("A-dual-both", "A-dual-both", "tab:red", "D"))
+E17_PAIRS = ("nyu__", "kitti__")
+
+
+def fig_e17(alpha=0.1, k=50, layout="near", base="S2-log", n_probes=(10, 20, 40)):
+    """Paper Fig. 3 (single column). (a) coverage by distance to the nearest anchor, `layout`, k anchors, n = 20;
+    lines: median over the NYU/KITTI model pairs, bands: range, bars: pixel share. (b) law of the per-image coverage
+    of A-dual, Beta(r, n + 1 - r) CDFs, with the measured 10th percentiles (dot: median, bar: range over pairs,
+    layouts and k) and, when recorded, the single-draw short share (coverage < 1 - alpha - 0.05)."""
+    from scipy.stats import beta as beta_law
+
+    rows = []
+    for p in glob.glob(str(RESULTS_ROOT / "e17_p20_g05" / f"*__{layout}" / "dist_summary.csv")):
+        if p.split("/")[-2].startswith(E17_PAIRS):
+            rows.append(pd.read_csv(p).assign(pair=p.split("/")[-2]))
+    summ = {}
+    for n in n_probes:
+        s = [pd.read_csv(p).assign(pair=p.split("/")[-2])
+             for p in glob.glob(str(RESULTS_ROOT / f"e17_p{n}_g05" / "*" / "summary.csv"))
+             if p.split("/")[-2].startswith(E17_PAIRS)]
+        if s:
+            s = pd.concat(s, ignore_index=True)
+            summ[n] = s[(s.method == "A-dual") & (s.base == base) & np.isclose(s.alpha, alpha)]
+    if not rows or not summ:
+        return
+    d = pd.concat(rows, ignore_index=True)
+    d = d[(d.base == base) & np.isclose(d.alpha, alpha) & (d.k.astype(str) == str(k)) & (d.n_img >= 20)]
+
+    plt.rcParams.update({"font.size": 6, "axes.linewidth": 0.5, "xtick.major.width": 0.5, "ytick.major.width": 0.5,
+                         "xtick.major.size": 2, "ytick.major.size": 2, "pdf.fonttype": 42})
+    fig, (ax, bx) = plt.subplots(1, 2, figsize=(3.3, 0.86), gridspec_kw={"wspace": 0.38})
+    x = np.arange(len(E14_BINS))
+    share = d.groupby("dist_bin").frac_px.median().reindex(E14_BINS)
+    tw = ax.twinx()
+    tw.bar(x, share.values, 0.6, color="0.88", lw=0, zorder=0)
+    tw.set_ylim(0, 1.6 * np.nanmax(share.values))
+    tw.set_yticks([])
+    ax.set_zorder(tw.get_zorder() + 1)
+    ax.patch.set_visible(False)
+    for method, label, color, mk in E17_METHODS:
+        g = d[d.method == method].groupby("dist_bin").cov_image_mean.agg(["median", "min", "max"]).reindex(E14_BINS)
+        if g["median"].notna().any():
+            ax.plot(x, g["median"], mk + "-", color=color, ms=2.2, lw=0.8, label=label)
+            ax.fill_between(x, g["min"], g["max"], color=color, alpha=0.13, lw=0)
+    ax.axhline(1 - alpha, color="k", lw=0.5, ls="--")
+    ax.set_xticks(x, ["<.02", "<.05", "<.1", "<.2", "≥.2"], fontsize=5)
+    ax.set_xlabel("distance to nearest anchor / diagonal", fontsize=5.5, labelpad=1)
+    ax.set_ylabel("coverage", fontsize=5.5, labelpad=1)
+    ax.tick_params(labelsize=5, pad=1)
+    ax.set_title(f"(a) {layout}, k = {k}, n = 20", fontsize=6, pad=2)
+    ax.legend(fontsize=4.5, loc="lower left", handlelength=1.4, borderpad=0.2, labelspacing=0.15, framealpha=0.85,
+              edgecolor="none")
+
+    grid = np.linspace(0.55, 1, 300)
+    colors = {10: "tab:orange", 20: "tab:blue", 40: "tab:green"}
+    for n, s in summ.items():
+        r = int(np.ceil((n + 1) * (1 - alpha)))
+        law = beta_law(r, n + 1 - r)
+        c = colors.get(n, "k")
+        bx.plot(grid, law.cdf(grid), color=c, lw=0.8, label=f"n = {n}")
+        p10 = s.cov_image_p10.dropna()
+        bx.plot([p10.min(), p10.max()], [0.1, 0.1], color=c, lw=2.2, alpha=0.45, solid_capstyle="butt")
+        bx.plot(p10.median(), 0.1, "o", color=c, ms=2.2, mec="k", mew=0.3)
+        if "frac_img_short" in s and s.frac_img_short.notna().any():
+            sh = s.frac_img_short.dropna()
+            x0 = 1 - alpha - 0.05
+            bx.plot([x0, x0], [sh.min(), sh.max()], color=c, lw=2.2, alpha=0.45, solid_capstyle="butt")
+            bx.plot(x0, sh.median(), "o", color=c, ms=2.2, mec="k", mew=0.3)
+    bx.axhline(0.1, color="0.6", lw=0.4, ls=":")
+    bx.set_xlim(grid[0], 1)
+    bx.set_ylim(0, 1)
+    bx.set_xlabel("per-image coverage $\\mathrm{Cov}_i$", fontsize=5.5, labelpad=1)
+    bx.set_ylabel("CDF", fontsize=5.5, labelpad=1)
+    bx.tick_params(labelsize=5, pad=1)
+    bx.set_title("(b) A-dual: law vs. measured p10", fontsize=6, pad=2)
+    bx.legend(fontsize=4.5, frameon=False, loc="upper left", handlelength=1.4, borderpad=0.1, labelspacing=0.15)
+    save(fig, f"e17_results__{layout}_k{k}")
+    plt.rcdefaults()
+
+
 def main():
     global OUT
     OUT = results_dir("figures")
@@ -354,6 +480,8 @@ def main():
     fig_e14()
     fig_e14(base="S5-shape")
     fig_e15()
+    fig_e16()
+    fig_e17()
     print(f"figures in {OUT}")
 
 

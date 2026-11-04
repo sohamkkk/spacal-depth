@@ -23,7 +23,7 @@ def main():
     args = ap.parse_args()
 
     root = CACHE_ROOT / args.dataset
-    tags = sorted(p.name for p in root.iterdir() if p.is_dir() and p.name != "gt")
+    tags = sorted(p.name for p in root.iterdir() if p.is_dir() and p.name != "gt" and not p.name.startswith("."))
     missing = [t for t in tags if not table_path(args.dataset, t).exists()]
     e0 = RESULTS_ROOT / "e0" / "per_image.csv"
     if missing:

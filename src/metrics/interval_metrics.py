@@ -21,6 +21,17 @@ def _per_image_mean(x: np.ndarray, offsets: np.ndarray) -> np.ndarray:
     return np.add.reduceat(x.astype(np.float64), offsets[:-1]) / np.diff(offsets)
 
 
+def _per_image_median(x: np.ndarray, offsets: np.ndarray) -> np.ndarray:
+    counts = np.diff(offsets)
+    img = np.repeat(np.arange(len(counts)), counts)
+    xs = x.astype(np.float64)[np.lexsort((x, img))]
+    start = offsets[:-1]
+    lo = xs[start + (counts - 1) // 2]
+    hi = xs[start + counts // 2]
+    with np.errstate(invalid="ignore"):
+        return np.where(lo == hi, lo, 0.5 * (lo + hi))
+
+
 def interval_score(lo, hi, y, alpha):
     """Winkler / Gneiting-Raftery interval score (lower is better)."""
     return (hi - lo) + (2.0 / alpha) * (np.maximum(lo - y, 0.0) + np.maximum(y - hi, 0.0))
@@ -61,7 +72,14 @@ def evaluate_intervals(
         "median_rel_width": float(np.median(rel_width)),
         "interval_score": float(_per_image_mean(is_m, off).mean()),
         "rel_interval_score": float(_per_image_mean(is_m / y, off).mean()),
+        # a few pixels with near-unbounded upper ends can dominate the mean of per-pixel scores
+        "rel_interval_score_robust": float(_per_image_median(is_m / y, off).mean()),
+        # keeps the miss penalty inside each image; robust to a few extreme images instead
+        "rel_interval_score_imgmed": float(np.median(_per_image_mean(is_m / y, off))),
+        "frac_img_short": float(np.mean(cov_img < 1 - alpha - 0.05)),
         "frac_infinite": float(1 - finite.mean()),
+        # pixels whose interval is wider than 10x the true depth (infinite included): uninformative
+        "frac_uninformative": float(_per_image_mean(width > 10 * y, off).mean()),
         "n_test_images": int(table.n_images),
         "n_test_pixels": int(table.n_pixels),
     }

@@ -38,7 +38,7 @@ def main():
         if is_pruned(ds):
             print(f"{ds}: cache pruned, keeping its existing E0 rows")
             continue
-        for tag in sorted(p.name for p in root.iterdir() if p.is_dir() and p.name != "gt"):
+        for tag in sorted(p.name for p in root.iterdir() if p.is_dir() and p.name != "gt" and not p.name.startswith(".")):
             for sid in list_samples(ds, tag):
                 g, p = load_gt(ds, sid), load_pred(ds, tag, sid)
                 if not g["mask"].any():

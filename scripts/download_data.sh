@@ -44,7 +44,10 @@ get_target() {
     eth3d)  # high-res multi-view training set, 13 scenes, 454 images: streams 49 GB, keeps ~4 GB (4x reduced)
       SPACAL_DATA_ROOT="$D" python -m scripts.prepare_eth3d --out "$D/eth3d"
       ;;
-    *) echo "unknown target $t (use nyu kitti diode eth3d)"; exit 1 ;;
+    arkitscenes)  # depth-upsampling validation: 287 video zips + intrinsics (~14 GB, read in place)
+      python scripts/fetch_arkitscenes.py --dst "$D/arkitscenes"
+      ;;
+    *) echo "unknown target $t (use nyu kitti diode eth3d arkitscenes)"; exit 1 ;;
   esac
 }
 
@@ -63,5 +66,6 @@ echo "--- sanity counts"
 [ -d "$D/kitti/val800" ] && echo "kitti val800 pngs: $(find "$D/kitti/val800" -name '*.png' | wc -l)"
 [ -d "$D/diode/val" ] && echo "diode rgb: $(find "$D/diode/val" -name '*.png' | wc -l) (expect 771)"
 [ -d "$D/eth3d" ] && echo "eth3d depth maps: $(find "$D/eth3d" -path '*/depth/*.npy' | wc -l) (expect 454)"
+[ -d "$D/arkitscenes" ] && echo "arkitscenes zips: $(find "$D/arkitscenes/zips" -name '*.zip' | wc -l) (expect 287)"
 du -sh "$D" 2>/dev/null || true
 [ ${#failed[@]} -eq 0 ] || { echo "!!! failed targets: ${failed[*]}"; exit 1; }
