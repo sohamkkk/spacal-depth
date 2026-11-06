@@ -1,9 +1,0 @@
-\section{Limitations}
-\label{sec:limitations}
-
-\emph{Expectation, not every draw:} with 20 probes about \NumBetaShortOneTwenty\% of images fall below 0.85 coverage in a single draw (\cref{tab:budget}).
-\emph{No spatial guarantee from probes alone:} the per-distance guarantee of \mDualBoth needs calibration scenes and the same anchor rule at deployment.
-\emph{What is certified:} the probes' quantity (\cref{sec:res:sensor}); \ifenvelopemain the envelope that would fix this holds only on average over scenes.\else with sensor-grade probes our truth guarantee comes only through width: the envelope of Supp.~D holds on average over scenes, not per image, and costs more than \mDistBoth.\fi{} ARKit depth is fused and dense; raw sparse returns and dropouts on glass or sky are untested.
-\emph{The centre:} under uniform anchors a completion network is better; our centre's advantage under clusters rests on one network, one dataset and \NumOmniSeeds{} splits.
-\emph{Selection of $\gamma$} used NYU and KITTI, so only ARKitScenes checks efficiency on held-out data; UniDepthV2 saw ARKitScenes in training.
-\emph{Scope:} one $\alpha$, two budgets, one independent sensor, uniform probes by design (with a fixed-pattern scanner the guarantee covers only pixels with a return), and no downstream use: we do not show that the intervals improve an AR or planning task; active placement is not studied.

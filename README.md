@@ -2,7 +2,7 @@
 
 Post-hoc conformal calibration of **frozen** monocular metric depth models (Depth Anything V2 Metric, UniDepthV2, Depth Pro): per-pixel depth intervals with distribution-free coverage guarantees, evaluated on NYU Depth v2, KITTI and DIODE. The exchangeable unit is the **image or scene**, not the pixel.
 
-The full write-up, with every number, the theory behind each guarantee and the limitations, is [`docs/PROJECT_REPORT.md`](docs/PROJECT_REPORT.md). The design of the distance-aware anchor method is in [`docs/ANCHOR_METHOD_PROPOSAL.md`](docs/ANCHOR_METHOD_PROPOSAL.md); the original plan and theory primer in `SpaCal-Depth Research Plan, Theory Primer and Build Guide.md`.
+The course report is [`report_neurips/main.pdf`](report_neurips/main.pdf) (sources in `report_neurips/`). The full write-up of the broad study, with every number, the theory behind each guarantee and the limitations, is [`docs/PROJECT_REPORT.md`](docs/PROJECT_REPORT.md); the pre-registered analysis plan of the confirmatory runs is [`docs/ANALYSIS_PLAN_2026-11-03.md`](docs/ANALYSIS_PLAN_2026-11-03.md).
 
 ## Main results
 

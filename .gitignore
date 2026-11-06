@@ -58,3 +58,17 @@ details.txt
 docs/CVPR_PLAN.md
 docs/REVIEWER_ASSESSMENT.md
 review/
+# CVPR submission sources (kept locally; only the files the report shares are versioned)
+/paper/*
+!/paper/macros.tex
+!/paper/numbers.tex
+!/paper/refs.bib
+!/paper/tools/
+!/paper/figures/
+/paper/figures/teaser.tex
+# planning and internal notes (kept locally)
+/docs/ANCHOR_METHOD_PROPOSAL.md
+/docs/GATE0_LITERATURE.md
+/docs/REPORT_UPDATE_2026-11-02.md
+/SpaCal-Depth Research Plan, Theory Primer and Build Guide.md
+/report_neurips/README.md
