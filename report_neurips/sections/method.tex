@@ -52,12 +52,12 @@ A random mixture of layouts at calibration time is valid only on average over th
 \subsection{Main method: dual-role anchors (\mDual)}
 \label{sec:method:dual}
 
-\input{../paper/figures/pipeline}
+\input{figures/pipeline}
 
 \paragraph{Architecture (\cref{fig:pipeline}).}
 (1)~A frozen monocular model produces $\yhat$.
 (2)~The sensor budget is split into $k-n$ anchors $\cS$ that follow the deployed layout and $n$ uniformly random probes $\cQ$.
-(3)~The anchors alone build a local centre $m(p)$ and scale $s(p)$ around $\yhat$ with the \mDist model of \cref{eq:scale}, fitted on $\cS$ only.
+(3)~The anchors alone build a local centre $m(p)$ and scale $s(p)$ around $\yhat$ with the \mDist model of \cref{eq:scale}: at test time it reads the values at $\cS$ only, while its variant, floor $\tau$ and distance function $g$ are chosen beforehand on 200 head-train images with dense ground truth under the same layout (\cref{app:adist}).
 (4)~The probes, unseen by stages 1--3, set one conformal threshold per image.
 Stage~1 can be any predictor that does not see the probes, \eg a depth-completion network fed RGB and $\cS$; stage~3 is then refit around its output.
 \mDual is therefore a calibration layer, not a depth estimator.
@@ -87,7 +87,7 @@ C(p)=\Big[\yhat(p)\,e^{\,m(p)-\qhat_i s_\gamma(p)},\;\yhat(p)\,e^{\,m(p)+\qhat_i
 \begin{theorem}[Dual-role validity]
 \label{thm:dual}
 Fix an image with valid pixels $\cP$ and a structured anchor set $\cS\subset\cP$ chosen by any rule, which may depend on $x$, $\yhat$ and the anchor values.
-Let $m$, $s>0$ and $\gamma$ be determined by $(x,\yhat,\cS,\dtil|_\cS)$.
+Let $m$, $s>0$ and $\gamma$ be determined by $(x,\cS,\dtil|_\cS)$ and by quantities fixed in advance, such as hyper-parameters fitted on other images ($\yhat=f(x)$ is a function of $x$).
 Let $v$ be the log residual of the quantity the probes report ($v=d$ for exact depth, $v=\dtil$ for a sensor).
 Draw $\cQ$ uniformly without replacement from $\cU=\cP\setminus\cS$, compute $\qhat$ by \cref{eq:threshold} with $v$, and let $J$ be uniform on $\cU\setminus\cQ$.
 Then
@@ -95,7 +95,7 @@ Then
 \P\big(\yhat(J)e^{v(J)}\in C(J)\,\big|\,x,\cS,\dtil|_\cS\big)\;\ge\;\frac{r}{n+1}\;\ge\;1-\alpha,
 \end{equation*}
 with equality on the left when the scores have no ties and $r\le n$.
-Equivalently, $\E[\Cov_i\mid x,\cS]\ge r/(n+1)$, the expectation being over the probe draw.
+Equivalently, $\E[\Cov_i\mid x,\cS,\dtil|_\cS]\ge r/(n+1)$, the expectation being over the probe draw.
 \end{theorem}
 
 \noindent\emph{Proof idea.}
@@ -104,6 +104,7 @@ The probes together with $J$ form a uniformly random $(n+1)$-subset of $\cU$, so
 The full proof is in \cref{app:proof-dual}. \hfill$\square$
 
 The theorem needs no calibration images and uses all $n$ probes for the threshold; $n\ge9$ suffices at $\alpha=0.1$.
+Validity holds for any $m$ and $s$ fixed before the probes are read, including untuned ones; the head-train images that tune the anchor model buy efficiency (narrower intervals), not validity.
 By contrast, \mLocalSplit, which applies \mLocal to the $n$ probes, spends half of them on a shift.
 \emph{Scope:} the guarantee holds in expectation over the probe draw, not per region.
 Probes must be uniform over the pixels it concerns.
@@ -157,9 +158,10 @@ $C^{\text{both}}(p)=\big[\min(\ell^{\text{dual}},\ell^{\text{dist}}),\,\max(u^{\
 \noindent The broad study's \mDistBoth, the hull of \mDistSplit with \mLocalSplit, is the baseline that \mDualBoth replaces.
 Any hull costs width, most when its two centres disagree, as under clustered anchors.
 
-\subsection{Sensor-error envelope}
+\subsection{Sensor-error envelope (evaluated, not adopted)}
 \label{sec:env}
 With sensor-valued probes, \cref{thm:dual} certifies the reading $\ytil$, not the depth $y$.
+This section describes an extension we evaluated to close that gap; it failed the efficiency gate fixed in advance (\cref{sec:res:sensor}) and is not part of the final method.
 Let $e=\log\ytil-\log y$ and suppose a reference (here a laser scan) exists on calibration scenes.
 We (a)~subtract a global bias $\hat\beta$, the median of $e$ on head-train pixels, from the probe values.
 We (b)~give each sensor-confidence class $c$ (ARKit: $0,1,2$) the band $[-a_c,b_c]=[Q_c(\lambda/2),Q_c(1-\lambda/2)]$ of the corrected head-train error, clipped to contain 0.

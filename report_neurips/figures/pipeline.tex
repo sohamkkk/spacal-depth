@@ -1,0 +1,44 @@
+%% Report copy of ../../paper/figures/pipeline.tex (envelope marked as not adopted). Pipeline figure (TikZ, single column, drawn at native width ~7.9 cm).
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  font=\sffamily\scriptsize,
+  box/.style={draw, rounded corners=2pt, align=center, text width=1.62cm, minimum height=8mm, inner sep=2pt, fill=white},
+  frozen/.style={box, fill=gray!15},
+  anch/.style={box, fill=blue!8},
+  prob/.style={box, fill=orange!18},
+  outbox/.style={box, text width=1.75cm, fill=white, very thick},
+  opt/.style={box, text width=1.75cm, dashed, fill=green!6},
+  arr/.style={-{Stealth[length=1.6mm]}, semithick},
+  darr/.style={-{Stealth[length=1.6mm]}, semithick, dashed}]
+  % column 1: inputs
+  \node[box]    (rgb)    at (0.85, 2.15) {RGB image $x$};
+  \node[box]    (sensor) at (0.85, 0.45) {sparse depth,\\budget $k$};
+  % column 2: model and split
+  \node[frozen] (f)      at (2.85, 2.15) {frozen model $f$\\[-1pt]{\tiny(or any probe-indep.\ centre)}};
+  \node[anch]   (S)      at (2.85, 0.95) {$k{-}n$ structured\\anchors $\cS$};
+  \node[prob]   (Q)      at (2.85,-0.15) {$n$ uniform\\probes $\cQ$};
+  % column 3: centre/scale and threshold
+  \node[anch]   (ms)     at (4.85, 2.15) {centre $m$, scale $s_\gamma$\\[-1pt]{\tiny from $\cS$ only}};
+  \node[prob]   (q)      at (4.85,-0.15) {threshold\\$\qhat_i=R_{(r)}$};
+  % column 4: output and optional stages
+  \node[outbox] (int)    at (6.95, 2.15) {$\yhat\,e^{\,m\pm\qhat_i s_\gamma}$\\[-1pt]\textbf{\mDual}};
+  \node[opt]    (hull)   at (6.95, 0.95) {$\cup$ \mDistSplit\\[-1pt]\textbf{\mDualBoth}};
+  \node[opt]    (env)    at (6.95,-0.15) {sensor-error envelope\\[-1pt]{\tiny evaluated, not adopted}};
+  % arrows
+  \draw[arr] (rgb) -- (f);
+  \draw[arr] (f) -- node[above, font=\tiny\sffamily]{$\yhat$} (ms);
+  \draw[arr] (sensor.east) -- ++(0.12,0) |- (S.west);
+  \draw[arr] (sensor.east) -- ++(0.12,0) |- (Q.west);
+  \draw[arr] (S.east) -- (ms.south west);
+  \draw[arr] (Q) -- (q);
+  \draw[arr] (ms) -- (q);
+  \draw[arr] (ms) -- (int);
+  \draw[arr] (q.east) -- ++(0.12,0) |- ([yshift=-2mm]int.west);
+  \draw[darr] (int) -- (hull);
+  \draw[darr] (hull) -- (env);
+  \node[font=\tiny\sffamily, text=orange!70!black, anchor=north] at (2.85,-0.62) {never seen by $f$, $m$, $s$};
+\end{tikzpicture}
+\caption{\textbf{Dual-role calibration.} Structured anchors $\cS$ build a centre $m$ and scale $s_\gamma$ around a frozen prediction $\yhat$ (or any probe-independent centre); the $n$ uniform probes $\cQ$ only score it and set one threshold per image (\cref{thm:dual}). Dashed: optional stages, \mDualBoth (\cref{thm:both}) and the sensor-error envelope (\cref{sec:env}), which was evaluated but not adopted (\cref{sec:res:sensor}).}
+\label{fig:pipeline}
+\end{figure}

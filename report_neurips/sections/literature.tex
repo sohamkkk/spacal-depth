@@ -20,7 +20,7 @@ Our layer does not compete with completion methods: it wraps whichever centre is
 \paragraph{Uncertainty for depth.}
 Bayesian, ensemble, self-supervised and gradient-based uncertainties~\cite{kendall2017uncertainties,lakshminarayanan2017ensembles,poggi2020uncertainty,hornauer2022gradient} rank pixels by difficulty, without a guarantee that a nominal 90\% interval covers 90\% of pixels.
 We use several of them as \emph{scores} inside conformal calibration (\cref{sec:method:wrapper}).
-Native confidences of feed-forward 3D reconstruction models are overconfident, and after a per-model repair about two thirds of held-out scenes still miss nominal coverage by more than five points~\cite{deng2026calibrationaudit}.
+Native confidences of feed-forward 3D reconstruction models are overconfident, and after a post-hoc repair fitted per model and dataset about two thirds of held-out scenes still miss nominal coverage by more than five points~\cite{deng2026calibrationaudit}.
 
 \paragraph{Conformal prediction and risk control.}
 Split conformal prediction~\cite{vovk2005alrw,lei2018distribution,angelopoulos2023gentle} computes a quantile of nonconformity scores on a calibration set.

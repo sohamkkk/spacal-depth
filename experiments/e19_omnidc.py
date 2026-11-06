@@ -9,7 +9,12 @@ each with probe_source in {clean, lidar}, and methods
                  (needs dense GT on calibration images; marginal over pixels)
   A-dist-split   distance-binned anchor calibration across images
   A-dual         per-image probe quantile (T13), and A-dual-both = hull(A-dual, A-dist-split) (T14)
+  A-dual-const   A-dual with nothing fitted: shift 0, scale 1 (the probes' quantile of |log y - log centre|)
+  A-dual-med     A-dual with shift = median residual of the image's structured anchors, scale 1
+                 (both valid by T13: shift and scale use no probe value; they remove the distance model, whose
+                 scale collapses on a centre that reproduces its own anchors)
 Widths of different centres are compared by rel_interval_score (normalized by GT) and median width / GT.
+--simple-only runs just the two fit-free arms (no A-dist fitting; minutes instead of the full run).
 
 Kill (review 2 Nov): if conformalized OMNI-DC beats A-dual's valid interval score by >= 15 %, A-dual on the
 frozen model is not the method to sell; check whether A-dual on the OMNI-DC centre keeps that gain.
@@ -32,7 +37,7 @@ from experiments.e11_anchors import a_dist, eval_view, log_err, prepare_dist, sc
 from experiments.e18_sensor_dual import mix_obs
 from src.calibrators import anchor_dist as ad
 from src.calibrators.anchor_noise import anchor_values
-from src.calibrators.anchors import AnchorDraw, rank_by_key, with_values
+from src.calibrators.anchors import AnchorDraw, group_conformal_quantile, rank_by_key, with_values
 from src.calibrators.dual import dual_interval, probe_quantile, split_roles
 from src.data.prepared import PixelTable
 from src.data.protocols import PROTOCOLS, clamp_pred
@@ -68,30 +73,54 @@ def split_cp(d_cal: np.ndarray, cal_eval: np.ndarray, test_pred: np.ndarray, alp
     return test_pred * np.exp(-q), test_pred * np.exp(q)
 
 
+def simple_dual(pred: np.ndarray, d_probe: np.ndarray, probes: np.ndarray, shift_img: np.ndarray,
+                offsets: np.ndarray, alpha: float):
+    """A-dual with scale 1 and a per-image constant shift fixed before the probes are read."""
+    n_img = len(offsets) - 1
+    img = np.repeat(np.arange(n_img), np.diff(offsets))
+    m = np.nan_to_num(shift_img, nan=0.0)[img]
+    q_img = group_conformal_quantile(np.abs(d_probe - m)[probes], img[probes], n_img, alpha)
+    q = q_img[img]
+    pred = pred.astype(np.float64)
+    with np.errstate(over="ignore", invalid="ignore"):
+        lo, hi = pred * np.exp(m - q), pred * np.exp(m + q)
+    inf_px = ~np.isfinite(q)
+    lo[inf_px], hi[inf_px] = 0.0, np.inf
+    return lo, hi, float(np.mean(~np.isfinite(q_img)))
+
+
 def run_cell(tabs, d_gt, obs, sdraws, pred_src, probe_src, s, half_a, alpha, args):
     test = tabs["test"]
     vt, st = eval_view(test, sdraws["test"].eval)
     d_pred, d_probe = obs[pred_src], obs[probe_src]
     probes = {n: split_roles(sdraws[n], d_gt[n], tabs[n].offsets)[1] for n in TABS}
     pdraws = {n: split_roles(sdraws[n], d_pred[n], tabs[n].offsets)[0] for n in TABS}
-    d_mix = {n: mix_obs(d_pred[n], d_probe[n], probes[n]) for n in TABS}
-    sdraws_obs = {n: with_values(sdraws[n], d_mix[n], tabs[n].offsets) for n in TABS}
-    cfg3, fields3, _ = prepare_dist("auto", tabs["head_fit"], d_pred["head_fit"], half_a, alpha, pdraws, tabs, d_pred)
-    cfg2, fields2, _ = prepare_dist("auto", tabs["head_fit"], d_mix["head_fit"], half_a, alpha, sdraws_obs, tabs, d_mix)
 
     methods, inf = {}, {}
-    model3, _ = ad.fit_dist_model(tabs["head_fit"], d_pred["head_fit"], s["head_fit"], pdraws["head_fit"], cfg3,
-                                  alpha, half_a, use_g=True, single_bin=False, fields=fields3["head_fit"])
-    q3 = probe_quantile(model3, d_probe["test"], s["test"], fields3["test"], probes["test"], test.offsets,
-                        alpha, args.dual_gamma)
-    lo3, hi3 = dual_interval(model3, test.pix["pred"], s["test"], fields3["test"], q3, test.offsets, args.dual_gamma)
-    methods["A-dual"] = (lo3[st], hi3[st])
-    inf["A-dual"] = float(np.mean(~np.isfinite(q3)))
-    ld, hd = a_dist(cfg2, fields2, s, sdraws_obs, tabs, d_mix, half_a, alpha, args)
-    methods["A-dist-split"] = (ld, hd)
-    methods["A-dual-both"] = (np.minimum(lo3[st], ld), np.maximum(hi3[st], hd))
-    inf["A-dual-both"] = inf["A-dual"]
-    methods["split-CP"] = split_cp(d_gt["cal"], sdraws["cal"].eval, test.pix["pred"][st].astype(np.float64), alpha)
+    for name, shift in (("A-dual-const", np.zeros(test.n_images)), ("A-dual-med", pdraws["test"].shift)):
+        lo, hi, inf[name] = simple_dual(test.pix["pred"], d_probe["test"], probes["test"], shift, test.offsets, alpha)
+        methods[name] = (lo[st], hi[st])
+
+    if not args.simple_only:
+        d_mix = {n: mix_obs(d_pred[n], d_probe[n], probes[n]) for n in TABS}
+        sdraws_obs = {n: with_values(sdraws[n], d_mix[n], tabs[n].offsets) for n in TABS}
+        cfg3, fields3, _ = prepare_dist("auto", tabs["head_fit"], d_pred["head_fit"], half_a, alpha, pdraws, tabs, d_pred)
+        cfg2, fields2, _ = prepare_dist("auto", tabs["head_fit"], d_mix["head_fit"], half_a, alpha, sdraws_obs, tabs, d_mix)
+        model3, _ = ad.fit_dist_model(tabs["head_fit"], d_pred["head_fit"], s["head_fit"], pdraws["head_fit"], cfg3,
+                                      alpha, half_a, use_g=True, single_bin=False, fields=fields3["head_fit"])
+        q3 = probe_quantile(model3, d_probe["test"], s["test"], fields3["test"], probes["test"], test.offsets,
+                            alpha, args.dual_gamma)
+        lo3, hi3 = dual_interval(model3, test.pix["pred"], s["test"], fields3["test"], q3, test.offsets, args.dual_gamma)
+        methods["A-dual"] = (lo3[st], hi3[st])
+        inf["A-dual"] = float(np.mean(~np.isfinite(q3)))
+        ld, hd = a_dist(cfg2, fields2, s, sdraws_obs, tabs, d_mix, half_a, alpha, args)
+        methods["A-dist-split"] = (ld, hd)
+        methods["A-dual-both"] = (np.minimum(lo3[st], ld), np.maximum(hi3[st], hd))
+        inf["A-dual-both"] = inf["A-dual"]
+        methods["split-CP"] = split_cp(d_gt["cal"], sdraws["cal"].eval, test.pix["pred"][st].astype(np.float64), alpha)
+        kinds = (cfg3.kind, cfg2.kind)
+    else:
+        kinds = ("none", "none")
 
     out = []
     y = vt.pix["gt"].astype(np.float64)
@@ -99,7 +128,7 @@ def run_cell(tabs, d_gt, obs, sdraws, pred_src, probe_src, s, half_a, alpha, arg
         m, cov_img = score_row(vt, lo, hi, alpha, args.beta)
         with np.errstate(invalid="ignore"):
             m["median_width_over_gt"] = float(np.median((hi - lo) / y))
-        out.append((name, m, cov_img, inf.get(name, 0.0), cfg3.kind, cfg2.kind))
+        out.append((name, m, cov_img, inf.get(name, 0.0), *kinds))
     return out
 
 
@@ -120,6 +149,7 @@ def main():
     ap.add_argument("--dual-gamma", type=float, default=0.5)
     ap.add_argument("--dist-head-images", type=int, default=200)
     ap.add_argument("--max-images", type=int, default=0, help="first N images only (smoke test)")
+    ap.add_argument("--simple-only", action="store_true", help="only the fit-free arms A-dual-const and A-dual-med")
     args = ap.parse_args()
     args.dist_no_g, args.dist_single_bin = False, False
 

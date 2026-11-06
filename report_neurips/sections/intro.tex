@@ -21,7 +21,7 @@ Three findings of the broad study shape the method (\cref{sec:res:broad}).
 (i)~Pixels are not exchangeable; the image or the scene is the unit.
 (ii)~A guarantee that averages over images hides individual images with large errors, mostly one global scale error per image, which about 20 sparse metric anchors remove.
 (iii)~Calibrating inside each image on its own anchors gives a per-image guarantee, but only if the anchors are a uniform random sample of pixels.
-When anchors placed by a real sensor (scan lines, one cluster, only near surfaces) both correct the prediction and calibrate it, nearby anchors agree, the calibration sees small errors, and the intervals become \emph{narrower} while missing most of the image: coverage falls to \NumLocalClusterCovLo--\NumLocalClusterCovHi{} under clustered anchors at a 0.9 target.
+When anchors placed by a real sensor (scan lines, one cluster, only near surfaces) both correct the prediction and calibrate it, nearby anchors agree, the calibration sees small errors, and the intervals become \emph{narrower} while missing most of the image: coverage falls to \NumLocalClusterCovLo--\NumLocalClusterCovHi{} under clustered anchors at a 0.9 target (range over six model--dataset pairs).
 Only dense ground truth reveals this failure.
 
 \paragraph{Main idea.}
@@ -29,7 +29,7 @@ We give the sensor budget two roles (\cref{fig:pipeline}).
 \emph{Prediction anchors} follow the sensor layout, whatever it is, and build a local centre and scale around the frozen prediction.
 \emph{Calibration probes}, a few measurements placed uniformly at random and never shown to the predictor, set one conformal threshold per image.
 Because centre and scale are fixed before the probes are revealed, a rank argument gives a per-image coverage guarantee, in expectation over the probe draw, for any anchor layout and any centre that ignores the probes, including a depth-completion network.
-No calibration images are needed.
+Validity needs no calibration images; held-out images are used only to tune the anchor model, which affects width, not the guarantee.
 The spread of per-image coverage follows an exact beta-binomial law, so the number of probes is a design parameter that trades sensor budget for per-image reliability.
 
 \paragraph{Contributions.}
@@ -43,11 +43,6 @@ It also evaluates four anchor methods and a distance-aware one (\mDist) under st
 \end{itemize}
 The statistical ingredients are known: fitting and calibration sets inside one instance~\cite{gui2023cmc}, within-field exchangeability~\cite{mao2024spatial}, and the conditional coverage law of split conformal prediction~\cite{vovk2012conditional}.
 Our contribution is their composition for sparse-guided dense depth, the analysis of the sensor budget, and an evaluation with an independent sensor.
-
-\paragraph{Status of the numbers.}
-The project ends with a confirmatory replication whose analysis plan was fixed before the runs (\cref{sec:protocol}).
-All of it is complete: the replication on NYU/KITTI (E17c), the depth-completion comparison (E19c), the replication of the sensor study (E18c) and the sensor-error envelope (E20).
-Every number in this report comes either from these confirmatory runs or from complete runs of the broad study (E0--E16); results that were only explored and not replicated are not reported.
 
 \begin{figure}[t]
 \centering

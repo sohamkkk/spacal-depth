@@ -102,7 +102,7 @@ python -m experiments.confirm_analysis --runs 'results/e18_conf/*/runs.csv' \
     --compare A-dual:A-dist-both A-dual-both:A-dist-both --out results/e18_conf/_confirm
 ```
 
-E19c (OMNI-DC as the centre, ten visit splits) needs a GPU for the network: export the anchor masks with `scripts/export_dual_anchor_masks.py`, run `scripts/omnidc_forward.py` (see `colab/e19c_omnidc.ipynb`), merge with `scripts/omnidc_merge.py`, then run `experiments/e19_omnidc.py` and `experiments/confirm_analysis.py`; each script's docstring has the exact command. The qualitative ARKitScenes figures come from `experiments/qual_dual.py` (compute) and `experiments/qual_dual_fig.py` (render).
+E19c (OMNI-DC as the centre, ten visit splits) needs a GPU for the network: export the anchor masks with `scripts/export_dual_anchor_masks.py`, run `scripts/omnidc_forward.py` (see `colab/e19c_omnidc.ipynb`), merge with `scripts/omnidc_merge.py`, then run `experiments/e19_omnidc.py` and `experiments/confirm_analysis.py`; each script's docstring has the exact command. The fairness ablation (`--simple-only`: arms `A-dual-const` and `A-dual-med`, which give OMNI-DC a fit-free centre instead of the distance model) runs on CPU from the merged outputs with `colab/e19s_simple_scale.ipynb`. The qualitative ARKitScenes figures come from `experiments/qual_dual.py` (compute) and `experiments/qual_dual_fig.py` (render).
 
 On a Slurm cluster the same steps are in `slurm/` (`smoke`, `cache`, `cpu`, `e11`, `new`, `confirm_pool`, `omnidc`); `slurm/env.sh` holds the shared job environment. Pass partition and GPU type on the command line, e.g. `sbatch -p <partition> --gres=gpu:<type>:1 slurm/cache.sbatch`. The full CPU pipeline of the broad study takes roughly 8–10 hours on 32 cores.
 
@@ -140,7 +140,7 @@ Calibrators with k sparse measurements per test image (`src/calibrators/anchors.
 | **A-dual** | k − n structured anchors build centre and scale, n uniform probes set one threshold per image: per image, any layout, any probe-independent centre, coverage law Beta(r, n + 1 − r) |
 | A-dual-both | hull of A-dual and A-dist-split: per image and per distance bin |
 | A-dual+env | A-dual on sensor-valued probes widened by a calibrated sensor-error band: truth coverage on average over scenes |
-| LSCP (baseline) | Jiang & Xie's localized spatial conformal prediction within each image: asymptotic only |
+| LSCP (baseline) | Jiang & Xie's localized spatial conformal prediction within each image: finite-sample only under spatial exchangeability, which structured anchors break |
 
 ## Experiments
 
@@ -160,7 +160,7 @@ Calibrators with k sparse measurements per test image (`src/calibrators/anchors.
 | E16 | `experiments/e16_noisy.py` | noisy, outlier, biased and real-LiDAR anchors |
 | E17 / E17c | `experiments/e11_anchors.py --exp-id e17_...` (`scripts/run_confirm.sh`, `scripts/confirm_pool.py`) | A-dual on NYU/KITTI, five layouts, k = 50/200, n = 20 probes |
 | E18 / E18c | `experiments/e18_sensor_dual.py` | ARKitScenes: laser vs iPad LiDAR as anchor and probe values |
-| E19c | `experiments/e19_omnidc.py` | depth-completion network (OMNI-DC) vs frozen model as the centre |
+| E19c | `experiments/e19_omnidc.py` | depth-completion network (OMNI-DC) vs frozen model as the centre; `--simple-only` for the fit-free OMNI-DC arms |
 | E20 | `experiments/e18_sensor_dual.py --envelope` | sensor-error envelope for iPad probes |
 
 ## Tests

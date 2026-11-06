@@ -6,8 +6,8 @@
 
 \paragraph{Setting.}
 Fix an image $x$ with its finite set $\cP$ of valid pixels, its prediction $\yhat$, a structured anchor set $\cS\subset\cP$ and the values $\dtil|_\cS$ reported at $\cS$.
-Everything below is conditional on $(x,\yhat,\cS,\dtil|_\cS)$; since the statement holds for every realization, it also holds after averaging over any randomness in the layout.
-By assumption, the centre $m$, the scale $s>0$, the per-image median $M=\med_{p\in\cP}s(p)$, and hence $s_\gamma=M(s/M)^\gamma$, are functions of $(x,\yhat,\cS,\dtil|_\cS)$, with $\gamma$ a fixed constant.
+Everything below is conditional on $(x,\cS,\dtil|_\cS)$, which also fixes $\yhat=f(x)$; since the statement holds for every realization, it also holds after averaging over any randomness in the layout.
+By assumption, the centre $m$, the scale $s>0$, the per-image median $M=\med_{p\in\cP}s(p)$, and hence $s_\gamma=M(s/M)^\gamma$, are functions of $(x,\cS,\dtil|_\cS)$ and of quantities fixed in advance, with $\gamma$ a fixed constant.
 They are therefore fixed functions on $\cU=\cP\setminus\cS$.
 Let $v:\cU\to\mathbb{R}$ be the log residual of the quantity the probes report.
 Every $p\in\cU$ then carries a fixed score $R(p)=|v(p)-m(p)|/s_\gamma(p)$.
@@ -31,7 +31,7 @@ Without ties, $R(J)\le\qhat$ holds if and only if $\rho\le r$, so equality holds
 
 \paragraph{From one pixel to image coverage.}
 Given $\cQ$, $J$ is uniform on $\cE=\cU\setminus\cQ$, so $\P(R(J)\le\qhat\mid\cQ)=\Cov_i$ (with $y$ replaced by $\yhat e^{v}$).
-Taking expectations over $\cQ$ gives $\E[\Cov_i\mid x,\yhat,\cS,\dtil|_\cS]\ge r/(n+1)$. \hfill$\square$
+Taking expectations over $\cQ$ gives $\E[\Cov_i\mid x,\cS,\dtil|_\cS]\ge r/(n+1)$. \hfill$\square$
 
 \paragraph{Remarks.}
 (a)~No assumption is made on how $\cS$ was chosen, on the distribution of images, or on $m$ and $s$ beyond their independence of the probe values.
@@ -222,6 +222,7 @@ The averaging unit (image or scene) is part of the guarantee as well: each versi
 
 \paragraph{Metric3D v2 and ETH3D.}
 Metric3D v2, which receives the calibrated focal length, is the most accurate model on every dataset.
+Its KITTI AbsRel (0.048) is close to the zero-shot value its authors report for the same backbone (0.052); NYU and KITTI are listed as test data, not training data, for both Metric3D v2 and UniDepthV2~\cite{hu2024metric3dv2,piccinelli2025unidepthv2}.
 Its confidence map correlates positively with the error on all five datasets and is the best score on three of them, whereas UniDepthV2's confidence has no absolute scale and its correlation with the error changes sign across datasets.
 It is also far more robust to the domain shifts of E5 and gains least from anchors.
 On ETH3D, image-level K1 with Depth Pro covers 0.690 on average, about 4.5 standard errors below the target.
@@ -266,6 +267,32 @@ The budget is fixed before any data are seen.
 With 10 probes, \mLocalSplit, and hence \mDistBoth, is infinite on every image by construction (5 calibration probes, fewer than the 9 that $\alpha=0.1$ needs), and \mDual's law is wider (p10 \NumBetaPTenTen, \cref{tab:budget}).
 With 40 probes the law tightens only slowly (\NumBetaShortOneForty\% short, against \NumBetaShortOneTwenty\%) at twice the measurement cost; the nominal level is the stronger lever (\cref{tab:budget}). We keep $n=20$.
 
+\section{Computational cost (E10)}
+\label{app:cost}
+\begin{table}[h]
+\centering\small
+\caption{\textbf{Computational cost (E10).} GPU: one Colab A100, per image. CPU: one node of a 32-core cluster, per whole calibration set or per scale-model fit and prediction on the calibration and test images. Ranges over NYU, KITTI and DIODE indoor/outdoor; DA-V2-L and UniDepthV2-L. The probe step of \mDual (one order statistic per image) was not timed separately.}
+\label{tab:cost}
+\begin{tabular}{@{}llr@{}}
+\toprule
+Stage & Unit & Time \\
+\midrule
+Prediction, UniDepthV2-L & ms / image & 46--61 \\
+Prediction, DA-V2-L & ms / image & 121--124 (321 on KITTI) \\
+Flip score (one extra forward pass) & ms / image & 47--327 \\
+Gradient score, DA-V2-L & ms / image & 354--1103 \\
+\midrule
+Image-level calibration (K1) & s / calibration set & 0.72--1.78 \\
+Scene-level calibration (K1-scene) & s / calibration set & 0.02--1.81 \\
+Pixel-level split CP (V4) & ms / calibration set & 14--32 \\
+Scale model, log score (S2) & s & 0.011--0.027 \\
+Scale model, flip / ensemble / gradient & s & 7.1--13.7 \\
+Scale model, learned (S5) & s & 26.7--51.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+Prediction dominates; calibration and the anchor-free scale models add at most seconds per calibration set, and only the learned scale model costs tens of seconds.
+
 \section{Experiment index}
 \label{app:index}
 \begin{table}[h]
@@ -282,7 +309,7 @@ E1 & do guarantees behave as theory says on synthetic data; does spread follow i
 E2--E4, E6, E9 & best scores and calibrators; conditional coverage; raw vs.\ conformal; $\alpha$ sweep & up to 17 pairs $\times$ 9 scores $\times$ 10 calibrators $\times$ 3 $\alpha$ $\times$ 20 splits \\
 E5 & does a guarantee survive domain shift; does recalibration restore it? & 8 settings $\times$ 10 splits \\
 E8 & coverage variability vs.\ calibration size: images or pixels? & NYU, KITTI $\times$ 50 splits \\
-E10 & computational cost & -- \\
+E10 & computational cost (\cref{app:cost}) & 4 datasets $\times$ 2 models \\
 E11 & coverage, spread and width vs.\ number of random anchors & 10 pairs $\times$ 8 $k$ $\times$ 5 splits $\times$ 6 draws \\
 E12 & does the interval protect a safety query? & 6 pairs $\times$ 2 $\alpha$ $\times$ 20 splits \\
 E13 & do anchor guarantees survive structured layouts? & 6 pairs $\times$ 5 layouts $\times$ 3 $k$ $\times$ 5 $\times$ 3 \\
@@ -303,4 +330,5 @@ E20 & sensor-error envelope & 2 models $\times$ 2 layouts $\times$ 2 cells; 20 $
 Every number in this report is a macro generated from the experiment summaries (\texttt{paper/numbers.tex}, written by \texttt{paper/tools/gen\_numbers.py}).
 The confirmatory comparisons come from \texttt{experiments/confirm\_analysis.py}, which writes the validity and paired-bootstrap tables, and the analysis plan with its amendment log is in \texttt{docs/ANALYSIS\_PLAN\_2026-11-03.md}.
 The broad-study numbers are taken from the project report (\texttt{docs/PROJECT\_REPORT.md}), which also lists the scripts per experiment.
-The code is at \url{https://github.com/sohamkkk/spacal-depth}.
+The code is at \url{https://github.com/sohamkkk/spacal-depth}; its 85 unit tests include Monte-Carlo checks of the guarantees.
+The broad study's GPU prediction caching ran on a Colab A100 and its calibration experiments on a 32-core cluster CPU node, where its CPU pipeline takes roughly 8--10 hours.

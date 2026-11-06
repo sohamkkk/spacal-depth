@@ -8,7 +8,7 @@ A few sparse metric anchors remove most of the scale error (intervals 1.1--3.7$\
 Calibrating inside each image on its own anchors gives a per-image guarantee only for uniformly random anchors; under the layouts real sensors produce, it fails silently, with tighter intervals that miss most of the image.
 Giving the sensor budget two roles fixes this.
 Structured anchors build the prediction, and a few uniformly random probes, hidden from the predictor, calibrate it within each image.
-The resulting layer needs no calibration images, turns the probe count into a design parameter with a known per-image coverage law, and runs on any probe-independent centre.
+The resulting layer needs no calibration images for validity (held-out images only tune its width), turns the probe count into a design parameter with a known per-image coverage law, and runs on any probe-independent centre.
 A depth-completion network is the better centre under uniform anchors, and the frozen model with an anchor-built centre under clustered anchors (ten confirmatory splits, one network, one dataset).
 Laser probes certified the depth even with iPad anchors; iPad probes certified only the iPad reading.
 
@@ -19,7 +19,8 @@ Laser probes certified the depth even with iPad anchors; iPad probes certified o
 \item \emph{What is certified:} the probes' quantity.
 The envelope that converts reading coverage into depth coverage holds only on average over scenes and, in our runs, costs more than \mDistBoth.
 ARKit depth is fused and dense; raw sparse returns and dropouts on glass or sky are untested.
-\item \emph{Selection of $\gamma$} used NYU and KITTI, so only ARKitScenes checks efficiency on held-out data, and UniDepthV2 saw ARKitScenes in training.
+\item \emph{Selection of $\gamma$ and the design of \mDist} used NYU and KITTI, so only ARKitScenes checks efficiency on held-out data, and UniDepthV2 saw ARKitScenes in training.
+\item \emph{Validity needs no images; efficiency does:} the \mDist variant, floor $\tau$ and distance function $g$ are chosen on 200 head-train images with dense ground truth under the same anchor layout. Without such images \cref{thm:dual} still holds, but the intervals may be wider.
 \item \emph{Scope:} one $\alpha$ in the main method, two budgets, one independent sensor and uniform probes by design.
 With a fixed-pattern scanner the guarantee covers only pixels with a return.
 There is no downstream evaluation beyond the safety-query study.

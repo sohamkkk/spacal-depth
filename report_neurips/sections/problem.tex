@@ -49,7 +49,7 @@ At level $1-\alpha$ we distinguish the following targets:
 \begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
 \item \emph{Marginal (image or scene):} $\E[\Cov_i]\ge1-\alpha$ over images (or scenes), measurements and calibration data.
 \item \emph{Image event:} with probability at least $1-\alpha$, a new image has at least a fraction $1-\beta$ of its pixels covered.
-\item \emph{Per-image:} $\E[\Cov_i\mid x_i,\cS_i]\ge1-\alpha$ for \emph{every} image, with only the probes random.
+\item \emph{Per-image:} $\E[\Cov_i\mid x_i,\cS_i,\dtil|_{\cS_i}]\ge1-\alpha$ for \emph{every} image, with only the probes random.
 No image is then always under-covered.
 \item \emph{Per distance bin:} for bins of $\delta$ (edges $0.02,0.05,0.1,0.2$), the expected coverage of the pixels of a new scene in each bin is at least $1-\alpha$, so far pixels are not traded for near ones.
 \end{itemize}
