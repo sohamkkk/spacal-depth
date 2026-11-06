@@ -5,6 +5,7 @@ Writes results/figures/*.png and *.pdf.
 """
 
 import glob
+import re
 
 import matplotlib
 import matplotlib.ticker
@@ -399,22 +400,30 @@ def fig_e17(alpha=0.1, k=50, layout="near", base="S2-log", n_probes=(10, 20, 40)
     layouts and k) and, when recorded, the single-draw short share (coverage < 1 - alpha - 0.05)."""
     from scipy.stats import beta as beta_law
 
-    rows = []
-    for p in glob.glob(str(RESULTS_ROOT / "e17_p20_g05" / f"*__{layout}" / "dist_summary.csv")):
-        if p.split("/")[-2].startswith(E17_PAIRS):
-            rows.append(pd.read_csv(p).assign(pair=p.split("/")[-2]))
+    def load(exp, layout_glob, name, keys):
+        """<exp>/<pair>[__seeds<a>_<b>]/<name>, averaged over the seed shards of each pair."""
+        frames = []
+        for p in glob.glob(str(RESULTS_ROOT / exp / layout_glob / name)):
+            pair = re.sub(r"__seeds\d+_\d+$", "", p.split("/")[-2])
+            if pair.startswith(E17_PAIRS):
+                frames.append(pd.read_csv(p).assign(pair=pair))
+        if not frames:
+            return None
+        d = pd.concat(frames, ignore_index=True)
+        d = d[(d.base == base) & np.isclose(d.alpha, alpha)]
+        return d.groupby(["pair", *keys], as_index=False).mean(numeric_only=True)
+
+    conf = (RESULTS_ROOT / "e17_conf").is_dir()
+    d = load("e17_conf" if conf else "e17_p20_g05", f"*__{layout}*", "dist_summary.csv", ["k", "method", "dist_bin"])
     summ = {}
     for n in n_probes:
-        s = [pd.read_csv(p).assign(pair=p.split("/")[-2])
-             for p in glob.glob(str(RESULTS_ROOT / f"e17_p{n}_g05" / "*" / "summary.csv"))
-             if p.split("/")[-2].startswith(E17_PAIRS)]
-        if s:
-            s = pd.concat(s, ignore_index=True)
-            summ[n] = s[(s.method == "A-dual") & (s.base == base) & np.isclose(s.alpha, alpha)]
-    if not rows or not summ:
+        exp = "e17_conf" if conf and n == 20 else f"e17_p{n}_g05"
+        s = load(exp, "*", "summary.csv", ["k", "method"])
+        if s is not None:
+            summ[n] = s[s.method == "A-dual"]
+    if d is None or not summ:
         return
-    d = pd.concat(rows, ignore_index=True)
-    d = d[(d.base == base) & np.isclose(d.alpha, alpha) & (d.k.astype(str) == str(k)) & (d.n_img >= 20)]
+    d = d[(d.k.astype(str) == str(k)) & (d.n_img >= 20)]
 
     plt.rcParams.update({"font.size": 6, "axes.linewidth": 0.5, "xtick.major.width": 0.5, "ytick.major.width": 0.5,
                          "xtick.major.size": 2, "ytick.major.size": 2, "pdf.fonttype": 42})

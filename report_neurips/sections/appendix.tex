@@ -263,7 +263,7 @@ ARKitScenes (upsampling val.) & \NumArkVisits{} visits & \NumArkFrames{} & Faro 
 With 20 probes the 10th percentile of $\Cov_i$ was \NumMeasPTenTwenty{} (law: \NumBetaPTenTwenty), and \NumESeventeenShort{} of images were short in one draw (law: \NumBetaShortOneTwenty\%).
 This is an implementation check of the randomization (\cref{fig:dual}b), not a finding.
 With 10 probes, \mLocalSplit, and hence \mDistBoth, is infinite on every image (5 calibration probes, fewer than the 9 needed), while \mDual stays finite at median width \NumWDualTenFifty/\NumWDualTenTwoHundred{} ($k=50/200$).
-With 40 probes the short share falls to \NumESeventeenShortForty{} (law: \NumBetaShortOneForty\%) at similar width (\NumWDualFortyFifty/\NumWDualFortyTwoHundred).
+In exploratory runs with 40 probes, the share of images short on average over two draws fell to \NumShortFortyLo--\NumShortFortyHi\% (law: \NumBetaShortTwoForty\%) at similar width (\NumWDualFortyFifty/\NumWDualFortyTwoHundred).
 However, under clustered anchors \mDual then misses the 10\% margin over \mDistBoth, so we keep $n=20$.
 
 \section{Experiment index}
@@ -293,7 +293,7 @@ E16 & noisy and real LiDAR anchors & 6 pairs $\times$ 6 sources $\times$ 2 $k$ $
 E17 / E17c & \mDual and \mDualBoth vs.\ \mDistBoth on NYU, KITTI; probe budget; $r=n$ arm & 6 pairs $\times$ 5 layouts $\times$ 2 $k$; 3 $\times$ 2 / 20 $\times$ 10 \\
 E18 / E18c & laser vs.\ iPad values for anchors and probes (ARKitScenes) & 2 models $\times$ 2 layouts $\times$ 4 cells; 20 $\times$ 2 / 20 $\times$ 10 \\
 E19 / E19c & completion network vs.\ frozen model as centre & 2 layouts $\times$ 2 probe sources; 3 $\times$ 1 / 10 $\times$ 1 \\
-E20 & sensor-error envelope & 2 models $\times$ 2 layouts; 20 $\times$ 10 (running) \\
+E20 & sensor-error envelope & 2 models $\times$ 2 layouts $\times$ 2 cells; 20 $\times$ 10 \\
 \bottomrule
 \end{tabular}
 \end{table}

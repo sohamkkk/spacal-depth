@@ -85,7 +85,7 @@ That measurements match this law (\cref{sec:res:budget}) is an implementation ch
 
 \noindent\fbox{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{\textbf{Design rule.}
 The share of images below coverage $c$ in one draw is $\P(\BetaD(r,n{+}1{-}r)<c)=\P(\mathrm{Bin}(n,c)\ge r)$, known before any data are seen (\cref{tab:budget}).
-At $\alpha=0.1$ it falls slowly with $n$ ($c=0.85$: \NumRuleShortHundred\% at $n=100$); the nominal level is the stronger lever: $n=r=20$ (nominal \NumRuleNomTwentyAll) leaves \NumRuleShortTwentyAll\% below 0.85, at a width cost of \pending{measured, $r=n$ arm}.}}
+At $\alpha=0.1$ it falls slowly with $n$ ($c=0.85$: \NumRuleShortHundred\% at $n=100$); the nominal level is the stronger lever: $n=r=20$ (nominal \NumRuleNomTwentyAll) leaves \NumRuleShortTwentyAll\% below 0.85 (measured on NYU and KITTI: \NumRmaxShort, coverage \NumRmaxCovLo--\NumRmaxCovHi), at \NumRmaxWidthCostLo--\NumRmaxWidthCostHi\% more width and \NumRmaxISCostLo--\NumRmaxISCostHi\% more interval score than $r=19$.}}
 
 \begin{table}[t]
 \centering\small
@@ -127,5 +127,5 @@ $C^{\text{both}}(p)=\big[\min(\ell^{\text{dual}},\ell^{\text{dist}}),\,\max(u^{\
 \TODO{gate: iPad-probe truth coverage $\ge0.9$ and IS $\ge$10\% below \mDistBoth, else \texttt{\textbackslash envelopemainfalse}.}
 \input{sections/envelope}
 \else
-\paragraph{Sensor-valued probes.} With sensor-valued probes, \cref{thm:dual} certifies the reading; an optional sensor-error envelope that converts this into an average-over-scenes guarantee on depth is given in Supp.~D, as it did not restore truth coverage here (\NumEnvTruthCov{} with iPad probes).
+\paragraph{Sensor-valued probes.} With sensor-valued probes, \cref{thm:dual} certifies the reading; an optional sensor-error envelope that converts this into an average-over-scenes guarantee on depth is given in Supp.~D; it restored truth coverage here (\NumEnvTruthCov{} with iPad probes) but at a higher interval score than \mDistBoth.
 \fi

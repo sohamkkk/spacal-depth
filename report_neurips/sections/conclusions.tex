@@ -17,18 +17,18 @@ Laser probes certified the depth even with iPad anchors; iPad probes certified o
 \item \emph{Expectation, not every draw:} with 20 probes about \NumBetaShortOneTwenty\% of images fall below 0.85 coverage in a single draw.
 \item \emph{No spatial guarantee from probes alone:} the per-distance guarantee of \mDualBoth needs calibration scenes and the same anchor rule at deployment.
 \item \emph{What is certified:} the probes' quantity.
-The envelope that converts reading coverage into depth coverage holds only on average over scenes, and it is still being evaluated.
+The envelope that converts reading coverage into depth coverage holds only on average over scenes and, in our runs, costs more than \mDistBoth.
 ARKit depth is fused and dense; raw sparse returns and dropouts on glass or sky are untested.
 \item \emph{Selection of $\gamma$} used NYU and KITTI, so only ARKitScenes checks efficiency on held-out data, and UniDepthV2 saw ARKitScenes in training.
 \item \emph{Scope:} one $\alpha$ in the main method, two budgets, one independent sensor and uniform probes by design.
 With a fixed-pattern scanner the guarantee covers only pixels with a return.
 There is no downstream evaluation beyond the safety-query study.
-\item \emph{Pending:} the confirmatory replications E17c and E18c and the envelope E20 are still running; orange numbers may change.
+\item \emph{Efficiency under clustered anchors:} there \mDual's interval score is up to \NumDualISLoseMax\% above the hull baseline's; its advantage is the per-image guarantee, not the score.
 \end{itemize}
 
 \paragraph{Future work.}
 \begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
-\item Complete the confirmatory replication and the envelope gate.
+\item A tighter sensor-error envelope that does not pay for both error sources separately.
 \item Test raw, sparse sensor returns instead of fused depth, and video, where the probes could be shared across frames.
 \item Study active placement of the anchors (the probes must stay random).
 \item Evaluate the intervals inside a downstream AR or planning task, calibrating the guarantee to the query it protects, as the safety-query study suggests.

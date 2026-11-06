@@ -5,7 +5,8 @@ averages each metric over draws within a split (seed), then per stratum (--by) a
   validity.csv  n_splits, mean coverage, SE over splits, valid (mean >= 1 - alpha - 2 SE),
                 exact (|mean - (1 - alpha)| <= 2 SE), and the means of the reported metrics
   compare.csv   for each --compare A:B, per metric: means, mean paired difference A - B (per split), its 95 %
-                percentile-bootstrap CI over splits, and claim = CI excludes 0 and A is valid
+                percentile-bootstrap CI over splits, and claim = CI lies below 0 (every compared metric is
+                lower-is-better) and A is valid
 
     python -m experiments.confirm_analysis --runs 'results/e18_conf/*/runs.csv' \
         --by source pred_source probe_source --arm-cols method \
@@ -109,12 +110,13 @@ def main():
                     lo, hi = bootstrap_ci(diff, args.n_boot, seed=len(cmp_rows))
                 mb = float(gb.loc[common, m].mean())
                 excl = bool(np.isfinite(lo) and (hi < 0 or lo > 0))
+                favours_a = bool(np.isfinite(hi) and hi < 0)
                 cmp_rows.append({**dict(zip(args.by, key)), "A": a, "B": b, "metric": m, "n_splits": len(common),
                                  "mean_A": float(ga.loc[common, m].mean()), "mean_B": mb,
                                  "diff": float(diff.mean()), "rel_diff_pct": 100 * float(diff.mean()) / mb if mb else np.nan,
                                  "ci_lo": lo, "ci_hi": hi, "ci_excludes_0": excl,
                                  "A_valid": valid.get((*key, a)), "B_valid": valid.get((*key, b)),
-                                 "claim": excl and bool(valid.get((*key, a)))})
+                                 "claim": favours_a and bool(valid.get((*key, a)))})
 
     args.out.mkdir(parents=True, exist_ok=True)
     val.to_csv(args.out / "validity.csv", index=False)

@@ -190,6 +190,10 @@ def main():
             if (done_dir / f"task__{name}").exists() or not claim(done_dir / f"claim__{name}", live):
                 n_skip += 1
                 continue
+            if (done_dir / f"task__{name}").exists():  # finished and released between the check and the claim
+                release(name)
+                n_skip += 1
+                continue
             p = subprocess.Popen(cmd, stdout=open(f"logs/{name}.log", "w"), stderr=subprocess.STDOUT, env=env)
             running[p.pid] = (part, name, p, time.time(), 0.0)
             last_launch = time.time()

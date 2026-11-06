@@ -57,6 +57,7 @@ def main():
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--shard", type=int, default=0, help="with --n-shards: fetch every n-th video (parallel runs)")
     ap.add_argument("--n-shards", type=int, default=1)
+    ap.add_argument("--videos", nargs="*", default=[], help="fetch only these video ids")
     args = ap.parse_args()
 
     zdir = os.path.join(args.dst, "zips", args.split)
@@ -72,6 +73,11 @@ def main():
     idir = os.path.join(args.dst, "intrinsics", args.split)
     os.makedirs(idir, exist_ok=True)
     vids = video_ids(args.split)
+    if args.videos:
+        unknown = sorted(set(args.videos) - set(vids))
+        if unknown:
+            raise SystemExit(f"not in the {args.split} split: {unknown}")
+        vids = sorted(args.videos)
     if args.limit:
         vids = vids[:args.limit]
     vids = vids[args.shard::args.n_shards]

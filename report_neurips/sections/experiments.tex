@@ -122,15 +122,15 @@ This budget split is the seed of the main method: the random measurements do the
 
 \begin{table}[t]
 \centering\footnotesize
-\caption{\textbf{NYU and KITTI, three frozen models (UniDepthV2, DA-V2, Depth Pro), $n=20$ probes, $\alpha=0.1$} (E17); median over the six model--dataset pairs. \textsf{local}: \mLocal calibrated on the $k$ structured anchors themselves; \textsf{dual}: \mDual; \textsf{both}: \mDualBoth. Short: \% of images whose coverage on one probe draw is below 0.85 (recorded by the confirmatory run). $\Delta$: change in median relative width and relative IS against \mDistBoth. $^\dagger$Uniform anchors only. $^\ddagger$\Cref{tab:budget}.}
+\caption{\textbf{NYU and KITTI, three frozen models (UniDepthV2, DA-V2, Depth Pro), $n=20$ probes, $\alpha=0.1$} (confirmatory E17c, \NumReplSplits{} scene splits $\times$ \NumProbeDraws{} probe draws); median over the six model--dataset pairs. \textsf{local}: \mLocal calibrated on the $k$ structured anchors themselves; \textsf{dual}: \mDual; \textsf{both}: \mDualBoth. Short: \% of images whose coverage on one probe draw is below 0.85. $\Delta$: change in median relative width and relative IS (primary) against \mDistBoth. $^\dagger$Uniform anchors only. $^\ddagger$\Cref{tab:budget}.}
 \label{tab:main}
 \setlength{\tabcolsep}{4pt}
-\newcommand{\rowE}[3]{#1 & #3 & \ESeventeen{#2}{#3}{local} & \ESeventeen{#2}{#3}{dual} & \ESeventeen{#2}{#3}{short} & \ESeventeen{#2}{#3}{dW} & \ESeventeen{#2}{#3}{bW} & \ESeventeen{#2}{#3}{bIS} \\}
-\begin{tabular}{@{}llcccccc@{}}
+\newcommand{\rowE}[3]{#1 & #3 & \ESeventeen{#2}{#3}{local} & \ESeventeen{#2}{#3}{dual} & \ESeventeen{#2}{#3}{short} & \ESeventeen{#2}{#3}{dW} & \ESeventeen{#2}{#3}{bW} & \ESeventeen{#2}{#3}{dIS} & \ESeventeen{#2}{#3}{bIS} \\}
+\begin{tabular}{@{}llccccccc@{}}
 \toprule
- & & \multicolumn{2}{c}{Coverage} & Short (\%) & \multicolumn{2}{c}{$\Delta$ width (\%)} & $\Delta$ IS (\%) \\
-\cmidrule(lr){3-4}\cmidrule(lr){5-5}\cmidrule(lr){6-7}\cmidrule(l){8-8}
-Layout & $k$ & \textsf{local} & \textsf{dual} & \textsf{dual} & \textsf{dual} & \textsf{both} & \textsf{both} \\
+ & & \multicolumn{2}{c}{Coverage} & Short (\%) & \multicolumn{2}{c}{$\Delta$ width (\%)} & \multicolumn{2}{c}{$\Delta$ IS (\%)} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-5}\cmidrule(lr){6-7}\cmidrule(l){8-9}
+Layout & $k$ & \textsf{local} & \textsf{dual} & \textsf{dual} & \textsf{dual} & \textsf{both} & \textsf{dual} & \textsf{both} \\
 \midrule
 \rowE{uniform}{uniform}{50}\rowE{}{uniform}{200}
 \midrule
@@ -142,7 +142,7 @@ Layout & $k$ & \textsf{local} & \textsf{dual} & \textsf{dual} & \textsf{dual} & 
 \midrule
 \rowE{near}{near}{50}\rowE{}{near}{200}
 \midrule
-\multicolumn{2}{@{}l}{theory} & $\ge$0.9$^\dagger$ & \NumDualCovTheory & \NumBetaShortOneTwenty$^\ddagger$ & & & \\
+\multicolumn{2}{@{}l}{theory} & $\ge$0.9$^\dagger$ & \NumDualCovTheory & \NumBetaShortOneTwenty$^\ddagger$ & & & & \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -154,16 +154,18 @@ Edge anchors over-cover, since edges are where errors are largest.
 The failing intervals are narrower, not wider: with 20 clustered anchors their median relative width was \NumLocalClusterWidthLo--\NumLocalClusterWidthHi, against \NumLocalUnifWidthLo--\NumLocalUnifWidthHi{} for uniform ones.
 
 \paragraph{Separating the roles restores per-image validity.}
-\mDual covers \NumDualCovLo--\NumDualCovHi{} in every layout, $k$ and pair, at its theoretical rate $r/(n+1)=\NumDualCovTheory$.
-It is at least 10\% narrower than the hull baseline \mDistBoth on \NumDualGatePairs{} of \NumPairs{} pairs in each of the \NumCells{} cells, and \NumDualWidthGainLo--\NumDualWidthGainHi\% narrower overall.
-\mDualBoth is narrower than \mDistBoth in every cell and has a lower IS on every pair (\NumDualBothISGainLo--\NumDualBothISGainHi\%).
-Under clustered anchors its two halves are centred differently and it gains only 2--3\% in width.
+\mDual covers \NumDualCovLo--\NumDualCovHi{} in every layout, $k$ and pair, at its theoretical rate $r/(n+1)=\NumDualCovTheory$ (within two standard errors in \NumDualExactCells{} of the \NumAllCells{} pair--layout--$k$ cells).
+It is at least 10\% narrower than the hull baseline \mDistBoth on \NumDualGatePairs{} of \NumPairs{} pairs in each of the \NumCells{} layout--$k$ cells, and \NumDualWidthGainLo--\NumDualWidthGainHi\% narrower overall (median over pairs; paired bootstrap intervals exclude 0).
+Part of that width is \mDistBoth's over-coverage (\NumDistBothCovLo--\NumDistBothCovHi), so the interval score, which charges misses, is the fairer comparison.
+On it \mDual is better in \NumDualISWins{} of the \NumAllCells{} cells, including every cell with uniform or scan-line anchors (by \NumDualISGainURLo--\NumDualISGainURHi\%); \mDistBoth is better in \NumDualISLosses, nine of them clustered, by at most \NumDualISLoseMax\%.
+\mDualBoth is better than \mDistBoth in \NumDualBothISWins{} cells and worse in \NumDualBothISLosses, all clustered and by at most \NumDualBothISLoseMax\%.
+Under clustered anchors its two halves are centred differently and it gains only \NumDualBothClusterWidthLo--\NumDualBothClusterWidthHi\% in width.
 \mDual's coverage varies across distance bins by \NumSpreadDualLo--\NumSpreadDualHi{} points; \mDualBoth reduces this to \NumSpreadDualBothLo--\NumSpreadDualBothHi{} (\cref{fig:dual}a).
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.8\linewidth]{figures/e17_results.pdf}
-\caption{\textbf{What each guarantee protects (E17).} (a)~Near layout, $k=50$, $n=20$: \mDual's coverage decreases with distance, as \cref{thm:dual} allows; \mDualBoth is flat. Lines/bands: median/range over the six NYU/KITTI pairs; bars: pixel share; dashed: 0.9. (b)~CDF of the per-image coverage law (\cref{prop:budget}) for $n=10,20,40$; dots: measured p10 of $\Cov_i$ (median over pairs, layouts and $k$).}
+\caption{\textbf{What each guarantee protects (E17).} (a)~Near layout, $k=50$, $n=20$: \mDual's coverage decreases with distance, as \cref{thm:dual} allows; \mDualBoth is flat. Lines/bands: median/range over the six NYU/KITTI pairs; bars: pixel share; dashed: 0.9. (b)~CDF of the per-image coverage law (\cref{prop:budget}) for $n=10,20,40$; dots at 0.1: measured p10 of $\Cov_i$ (median over pairs, layouts and $k$); dot at 0.85: measured share of short images, $n=20$. Confirmatory for $n=20$; $n=10,40$ exploratory.}
 \label{fig:dual}
 \end{figure}
 
@@ -229,7 +231,7 @@ A mean-over-images IS would instead be dominated by a few \omnidc pixels with ex
 
 \begin{table}[t]
 \centering\footnotesize
-\caption{\textbf{Laser-truth coverage by value source of anchors / probes} (ARKitScenes, $k=200$, $\alpha=0.1$; L $=$ laser, I $=$ iPad LiDAR). Frozen-model rows: E18, mean over \NumReplSplits{} visit splits and two probe draws (exploratory; confirmatory E18c running). \omnidc rows: E19, laser anchors confirmatory (ten splits); iPad anchors (I/L, I/I) exploratory (three splits).}
+\caption{\textbf{Laser-truth coverage by value source of anchors / probes} (ARKitScenes, $k=200$, $\alpha=0.1$; L $=$ laser, I $=$ iPad LiDAR). Frozen-model rows: confirmatory E18c, mean over \NumReplSplits{} visit splits and ten probe draws; \mDualEnv: E20, same splits and draws, iPad probes only. \omnidc rows: E19, laser anchors confirmatory (ten splits); iPad anchors (I/L, I/I) exploratory (three splits).}
 \label{tab:sensor}
 \setlength{\tabcolsep}{4pt}
 \newcommand{\eB}[3]{\ENineteen{#1}{#2}{clean}{clean}{#3}{cov} & \ENineteen{#1}{#2}{lidar}{clean}{#3}{cov} & \ENineteen{#1}{#2}{clean}{lidar}{#3}{cov} & \ENineteen{#1}{#2}{lidar}{lidar}{#3}{cov}}
@@ -245,7 +247,7 @@ Centre & Calibration & L/L & I/L & L/I & I/I & L/L & I/L & L/I & I/I \\
 \rowC{UniDepthV2 + $\cS$}{unidepth}{A-dist-split}
 \rowC{}{unidepth}{A-dual}
 \rowC{}{unidepth}{A-dist-both}
- & \mDualEnv & -- & -- & \pending{E20} & \pending{E20} & -- & -- & \pending{E20} & \pending{E20} \\
+ & \mDualEnv & -- & -- & \ETwenty{uniform}{unidepth}{clean}{A-dual-env}{cov} & \ETwenty{uniform}{unidepth}{lidar}{A-dual-env}{cov} & -- & -- & \ETwenty{cluster}{unidepth}{clean}{A-dual-env}{cov} & \ETwenty{cluster}{unidepth}{lidar}{A-dual-env}{cov} \\
 \midrule
 \rowC{DA-V2 + $\cS$}{dav2}{A-dual}
 \midrule
@@ -271,6 +273,9 @@ Earlier within-image methods behave the same (iPad anchors: \mLocal{} \NumArkLoc
 Two methods cover the truth in every cell.
 \mSplitCP does so because it calibrates on laser depth of other scenes, which a deployed system lacks.
 \mDistBoth does so through width, at \NumEEighteenDistBothRatio$\times$ \mDual's IS under uniform anchors with laser values.
-Probes certify what they measure; sensor-grade probes need the envelope of \cref{sec:env}.
+Probes certify what they measure.
 
-\placeholder{sensor-error envelope (E20), running}{fills the \mDualEnv row of \cref{tab:sensor}. Gate fixed in advance: iPad-probe truth coverage valid at 0.9 and IS at least 10\% below \mDistBoth. Truth coverage: \NumEnvTruthCov; IS gain: \NumEnvISGain.}
+\paragraph{The sensor-error envelope (E20).}
+The envelope of \cref{sec:env} restores truth coverage with iPad probes (\NumEnvTruthCov{} over both models, layouts and anchor sources), but it over-covers: its IS is \NumEnvISWorse{} above that of \mDistBoth (uniform \NumEnvISWorseUni, clustered \NumEnvISWorseCluster).
+It therefore fails the gate fixed in advance (valid truth coverage and an IS at least 10\% below \mDistBoth) in both layouts, and \mDistBoth remains the cheaper way to cover the truth with sensor-grade probes.
+The union bound behind \cref{prop:env} is loose here: \mDual at level $0.95$ already covers most of the truth, and widening every interval by the class band adds the rest again.

@@ -18,7 +18,7 @@ Depth Pro, trained on ARKitScenes, is not used there.
 $k\in\{50,200\}$ measurements per image, of which $n=20$ are probes (ablation $n\in\{10,40\}$), under the five layouts of \cref{sec:setup}.
 On NYU and KITTI they report the ground truth.
 On ARKitScenes, anchors and probes each report the laser or the iPad value, a $2\times2$ factorial (laser/laser, iPad/laser, laser/iPad, iPad/iPad); coverage is always measured against the laser.
-For UniDepthV2 and DA-V2 (E18): $k=200$ (180 anchors, 20 probes), uniform and cluster layouts, \NumReplSplits{} visit splits $\times$ 2 probe draws.
+For UniDepthV2 and DA-V2 (E18): $k=200$ (180 anchors, 20 probes), uniform and cluster layouts, \NumReplSplits{} visit splits $\times$ \NumProbeDraws{} probe draws.
 
 \paragraph{Methods.}
 All methods share positions and the log-residual score.
