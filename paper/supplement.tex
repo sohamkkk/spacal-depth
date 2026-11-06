@@ -86,7 +86,7 @@ Its mean is $(N-n)\,r/(n+1)$, so $\E[\Cov_i]=r/(n+1)$, the equality case of Theo
 A beta-binomial variable is a binomial mixture with success probability $B\sim\BetaD(r,n+1-r)$; dividing by $N-n$ and letting $N\to\infty$ with $n$ fixed gives $\Cov_i\to B$ in distribution, the classical conditional-coverage law of split conformal prediction~\cite{vovk2012conditional}. \hfill$\square$
 
 \paragraph{Numbers.}
-Main Tab.~1 uses the Beta approximation. For $n=20$ ($r=19$): $\E[\Cov_i]=19/21=\NumDualCovTheory$; the 10th percentile is \NumBetaPTenTwenty; $\P(\Cov_i<0.85)=\NumBetaShortOneTwenty\%$ for one draw, the definition of short images throughout.\footnote{The exploratory E17 runs recorded only coverage averaged over two draws; its law (Monte Carlo, \NumBetaShortTwoTwenty\%) matched the measured \NumMeasShortTwoTwenty\%, an implementation check that no reported short share uses.} With a few thousand evaluation pixels per image the finite-population correction is negligible at the reported precision. Matching these values empirically is an implementation check of the randomization, not a finding.
+Main Tab.~1 uses the Beta approximation. For $n=20$ ($r=19$): $\E[\Cov_i]=19/21=\NumDualCovTheory$; the 10th percentile is \NumBetaPTenTwenty; $\P(\Cov_i<0.85)=\NumBetaShortOneTwenty\%$ for one draw, the definition of short images throughout. With a few thousand evaluation pixels per image the finite-population correction is negligible at the reported precision. Matching these values empirically is an implementation check of the randomization, not a finding.
 
 \section{Proof of Theorem 2 (hull validity)}
 \label{supp:proof-both}
@@ -132,7 +132,7 @@ So the fraction of a test scene's pixels that miss $y$ is at most the fraction w
 
 \noindent The bound is an average over scenes: the envelope term has no per-image guarantee. It requires the sensor reading and its confidence at every evaluation pixel (true for ARKit's dense depth; for a sparse sensor, the population is restricted to pixels with returns). The levels are fixed before the run at $\alpha_s=\alpha_e=0.05$; the grid has 400 log-spaced values in $[10^{-6},0.5]$.
 
-\paragraph{Illustrative fit (exploratory, not confirmatory).} On three splits with UniDepthV2, $\hat\lambda=\prelim{0.016}$--$\prelim{0.024}$. The high-confidence band is about $\pm6\%$ ($a_2,b_2=\prelim{0.052}$--$\prelim{0.071}$ in log); the low- and medium-confidence bands are \prelim{0.31}--\prelim{0.47} in log. \prelim{1.7}--\prelim{2.5}\% of test pixels fall outside their band.
+\paragraph{Fitted envelope (E20).} The fit uses only the sensor and the laser truth, so it is the same for every model and layout; over the \NumEnvSplits{} visit splits, $\hat\lambda=\NumEnvLamLo$--$\NumEnvLamHi$. The high-confidence band is about $\pm6\%$ ($a_2=\NumEnvHighALo$--$\NumEnvHighAHi$, $b_2=\NumEnvHighBLo$--$\NumEnvHighBHi$ in log); the low- and medium-confidence bands are \NumEnvLowMedLo--\NumEnvLowMedHi{} in log. \NumEnvCalLossLo\% of calibration pixels fall outside their band, at the risk-control limit $((U+1)\alpha_e-1)/U$.
 
 \section{The distance-aware centre and scale}
 \label{supp:adist}
@@ -184,7 +184,7 @@ Metric3D v2~\cite{hu2024metric3dv2}: 18 datasets (DDAD, Lyft, DrivingStereo, DIM
 \paragraph{E19: completion centre.}
 \omnidc~\cite{zuo2025omnidc} is run with the released v1.1 checkpoint and the settings of its demo script (three resolutions, median depth normalization, Depth Anything V2 prior), with no fine-tuning. Inputs are the RGB frame and a sparse depth map that holds a value only at the 180 structured anchors of the mask: the laser value (``clean'') or the iPad value (``lidar''; anchors without an iPad return are left empty). The 20 probes and all other pixels are zero, so the network never sees a probe. Frames are zero-padded to a multiple of 16 and the output is cropped back; inference runs in fp32, as published. All variants of a frame (layouts $\times$ splits $\times$ value sources) run in one batch, so the RGB encoder and the prior are evaluated once per frame. Anchor and probe positions are exported from the calibration pipeline and checked to match its frames and pixel order exactly, so both centres are calibrated on identical positions, splits and evaluation pixels. No frame had a non-finite centre (\NumArkFrames{} kept).
 Calibration: \mSplitCP takes the $\lceil(N+1)(1-\alpha)\rceil$-th smallest $|\log y-\log\yhat|$ over the $N$ evaluation pixels of all calibration frames (laser $y$); \mDistSplit, \mDual and \mDualBoth are as in the main paper, with the distance-aware model refit around each centre (variant chosen on 200 head-train frames) and $\gamma=0.5$. Seeds $0$--$9$ give ten visit splits, each with its own anchor mask; one probe draw per split.
-With laser anchors (both probe sources) E19 is confirmatory: ten splits, analysed by the fixed plan (paired bootstrap over splits, $10^4$ resamples). Only \omnidc completed from iPad anchors was not rerun by design; those cells of \cref{tab:e19full} are exploratory (seeds 0--2).
+With laser anchors (both probe sources) E19 is confirmatory: ten splits, analysed by the fixed plan (paired bootstrap over splits, $10^4$ resamples). \omnidc completed from iPad anchors was not part of the confirmatory run by design and is not reported.
 Point accuracy on the test pixels outside the structured anchors (descriptive; image-mean AbsRel, mean over the ten splits, min--max over splits in brackets): \omnidc reaches 0.0064 (0.0061--0.0068) under uniform and 0.0738 (0.0709--0.0757) under clustered anchors. UniDepthV2 rescaled per image by the median $\log(y/\yhat)$ at the same 180 anchors reaches 0.0293 (0.0276--0.0305) and 0.0394 (0.0370--0.0418); without anchors it reaches 0.121. $\delta<1.25$: 0.997 vs.\ 0.988 (uniform), 0.944 vs.\ 0.981 (cluster). Under uniform anchors \omnidc is about $4.6\times$ more accurate; under clustered anchors one per-image scale on UniDepthV2 roughly halves its error, matching the interval-score result.
 
 \paragraph{Interval-score blow-up.} Only for \omnidc under clustered anchors, the arms built on the distance model (\mDistSplit, \mDualBoth, and \mDual in splits where its scale field falls back to the kernel form) have, in some splits, a mean-over-images relative interval score of up to $10^{29}$. \omnidc reproduces its own input anchors, so the anchor residuals that the distance model reads are almost $0$; its spread estimate and the floor $\tau$ collapse to about $10^{-6}$, the per-bin threshold in far bins becomes huge, and threshold times scale puts upper bounds of $e^{\text{tens}}$ on 0.1--0.4\% of pixels (Unin.\ column). Median widths and the primary IS (0.31--0.42) are normal. This is a property of calibrating a centre that has consumed the anchors with anchor residuals; \mDual's probe-based scale is far less affected.
@@ -216,12 +216,10 @@ Centre & Anch./probes & Calib. & Cov. & p10 & Sh.\,\% & W$/y$ & IS\eFh & Cov. & 
 \blockG{}{laser / iPad}{unidepth}{clean}{lidar}\midrule
 \blockG{}{iPad / iPad}{unidepth}{lidar}{lidar}\midrule
 \blockG{\omnidc}{laser / laser}{omnidc}{clean}{clean}\midrule
-\blockG{}{iPad / laser}{omnidc}{lidar}{clean}\midrule
-\blockG{}{laser / iPad}{omnidc}{clean}{lidar}\midrule
-\blockG{}{iPad / iPad}{omnidc}{lidar}{lidar}
+\blockG{}{laser / iPad}{omnidc}{clean}{lidar}
 \bottomrule
 \end{tabular}
-\caption{\textbf{Full E19 grid} (ARKitScenes, $k=200$, $n=20$, $\alpha=0.1$; mean over ten visit splits, one probe draw; confirmatory, except the \omnidc rows with iPad anchors: exploratory, three splits; --: not recorded there, Unin.\ and two cluster IS values). Anchors / probes: the value source of the 180 structured anchors (also \omnidc's input) and of the 20 probes. Coverage is of the laser truth. For UniDepthV2, \mSplitCP uses the raw prediction (no anchors), so its rows repeat; for \omnidc it depends on the anchor source only. Columns as in main Tab.~3 (Sh.: short)\ifENineteenUninf; Unin.: \% of pixels with an interval wider than $10y$ (infinite included)\fi.}
+\caption{\textbf{Full E19 grid} (ARKitScenes, $k=200$, $n=20$, $\alpha=0.1$; mean over ten visit splits, one probe draw; confirmatory; --: IS dominated by the blow-up below). Anchors / probes: the value source of the 180 structured anchors (also \omnidc's input) and of the 20 probes. Coverage is of the laser truth. For UniDepthV2, \mSplitCP uses the raw prediction (no anchors), so its rows repeat; for \omnidc it depends on the anchor source only. Columns as in main Tab.~3 (Sh.: short)\ifENineteenUninf; Unin.: \% of pixels with an interval wider than $10y$ (infinite included)\fi.}
 \label{tab:e19full}
 \end{table*}
 
@@ -292,13 +290,37 @@ Layout & $k$ & \textsf{local} & \textsf{dual} & \textsf{dual} & \textsf{dual} & 
 
 \section{Additional results}
 \label{supp:results}
-\placeholder{from the confirmatory replication and running experiments}{
-(i)~95\% paired bootstrap intervals for main Tab.~2 and~3;
-(ii)~coverage and pixel share per distance bin, all layouts and datasets;
-(iii)~$n\in\{10,40\}$ in full, and the width cost of the $r=n=20$ arm;
-(iv)~$\gamma=1$ vs.\ $0.5$;
-(v)~ARKitScenes, all five layouts with iPad values, and E16 (LSCP);
-(vi)~Metric3D v2 on NYU and KITTI.}
+\Cref{tab:e17ci} gives the paired bootstrap intervals behind the interval-score comparisons of main Sec.~6.2, and \cref{tab:e17dist} the coverage per distance bin behind main Fig.~3a for every layout.
+
+\begin{table}[h]
+\centering\footnotesize
+\setlength{\tabcolsep}{1.6pt}
+\begin{tabular}{@{}llcccccc@{}}
+\toprule
+ & & \multicolumn{3}{c}{\mDual} & \multicolumn{3}{c}{\mDualBoth} \\
+\cmidrule(lr){3-5}\cmidrule(l){6-8}
+Layout & $k$ & $\Delta$ & 95\% CI & $-$/$+$ & $\Delta$ & 95\% CI & $-$/$+$ \\
+\midrule
+\SuppCIRows
+\bottomrule
+\end{tabular}
+\caption{\textbf{Relative interval score against \mDistBoth} (E17c, NYU/KITTI, $n=20$; \NumReplSplits{} splits $\times$ \NumProbeDraws{} draws). $\Delta$: median over the six pairs of the relative difference (\%); 95\% CI: lowest lower and highest upper bound over pairs of the paired bootstrap interval over splits ($10^4$ resamples), relative to \mDistBoth; $-$/$+$: pairs whose interval lies entirely below / above 0.}
+\label{tab:e17ci}
+\end{table}
+
+\begin{table}[h]
+\centering\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}llccccc@{}}
+\toprule
+Layout & & $<$0.02 & 0.02--0.05 & 0.05--0.1 & 0.1--0.2 & $\ge$0.2 \\
+\midrule
+\SuppDistRows
+\bottomrule
+\end{tabular}
+\caption{\textbf{Coverage by distance to the nearest anchor} (fraction of the image diagonal; E17c, $k=50$, $n=20$, median over the six NYU/KITTI pairs). First row of each layout: median pixel share; --: bin holds less than 0.1\% of pixels.}
+\label{tab:e17dist}
+\end{table}
 
 {
     \small

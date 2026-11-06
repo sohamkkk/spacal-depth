@@ -313,6 +313,8 @@ def e19_rows(t: dict) -> list[str]:
     if explor and len(explor) < len(t):
         out.append("%% exploratory (seeds 0-2; not in the confirmatory E19c): " + ", ".join(explor))
     for (pat, cen, ps, qs, meth), r in sorted(t.items()):
+        if r["_src"] == "explor" and len(explor) < len(t):
+            continue
         key = f"e19/{pat}/{cen}/{ps}/{qs}/{meth}"
         isv, robust = rel_is(r)
         cells = {"cov": "%.3f" % float(r["cov_image_mean"]), "ptten": "%.3f" % float(r["cov_image_p10"]),
@@ -536,6 +538,144 @@ def e20_text() -> list[str]:
             "\\providecommand{\\NumEnvAlphaE}{}\\renewcommand{\\NumEnvAlphaE}{0.05}"]
 
 
+E14_BINS = ["<0.02", "0.02-0.05", "0.05-0.1", "0.1-0.2", ">=0.2"]
+
+
+def e17_dist(lay: str, k: str) -> dict[tuple, list[tuple[float, float]]]:
+    """E17c dist_summary: (method, bin) -> per pair (coverage, pixel share), each averaged over splits."""
+    out: dict[tuple, list[tuple[float, float]]] = {}
+    for ds, model in E17_PAIRS:
+        acc: dict[tuple, list[tuple[float, float]]] = {}
+        for p in (ROOT / "results" / "e17_conf").glob(f"{e17_source(ds, model, lay)}__seeds*/dist_summary.csv"):
+            for r in csv.DictReader(open(p)):
+                if r["k"] == k and r["base"] == "S2-log":
+                    acc.setdefault((r["method"], r["dist_bin"]), []).append(
+                        (float(r["cov_image_mean"]), float(r["frac_px"])))
+        for key, v in acc.items():
+            out.setdefault(key, []).append((statistics.fmean(c for c, _ in v), statistics.fmean(s for _, s in v)))
+    return out
+
+
+def scale_share() -> list[float]:
+    """E11 (all images, 5 splits): R^2 of per-image k = 0 coverage on the image's global scale error, S2-log base."""
+    out = []
+    for ds, model in E17_PAIRS:
+        md = ROOT / "results" / "e11" / f"{ds}__{model}" / "summary.md"
+        for line in open(md):
+            if line.startswith("- cov_k0_S2-log:"):
+                out.append(float(line.split("'r2_scale':")[1].split(",")[0]))
+    return out
+
+
+def ark_accuracy() -> dict[str, tuple[float, float]]:
+    """E0 on ARKitScenes, recomputed on the prepared evaluation lattice (all frames): image-mean AbsRel and delta1."""
+    import numpy as np
+    out = {}
+    for key, model in E18_MODELS.items():
+        f = ROOT / "prepared_new" / f"arkitscenes__{model}.npz"
+        if not f.exists():
+            continue
+        z = np.load(f, allow_pickle=True)
+        o, p, g = z["offsets"], z["pix__pred"], z["pix__gt"]
+        n = np.diff(o)
+        absrel = np.add.reduceat(np.abs(p - g) / g, o[:-1]) / n
+        d1 = np.add.reduceat(np.maximum(p / g, g / p) < 1.25, o[:-1]) / n
+        out[key] = (float(absrel.mean()), float(d1.mean()))
+    return out
+
+
+def final_text(conf17, t18: dict) -> list[str]:
+    """Confirmatory or complete-data replacements for the hand-written exploratory (\\prelim) numbers."""
+    mac = lambda name, value: f"\\providecommand{{\\{name}}}{{}}\\renewcommand{{\\{name}}}{{{value}}}"  # noqa: E731
+    lo_hi = lambda name, xs, f: [mac(name + "Lo", f % min(xs)), mac(name + "Hi", f % max(xs))]  # noqa: E731
+    lines = ["%% Replacements for exploratory hand-written numbers (all black).",
+             "% E19 cells: plain values (the iPad-anchor OMNI-DC cells are not emitted and render as \\pending).",
+             "\\renewcommand{\\ENineteen}[6]{\\ifcsname e19/#1/#2/#3/#4/#5/#6\\endcsname"
+             "\\csname e19/#1/#2/#3/#4/#5/#6\\endcsname\\else\\pending{?}\\fi}"]
+    share = scale_share()
+    lines += ["% E11, all images: share of per-image k = 0 coverage variance explained by scale error (6 pairs, %)"]
+    lines += lo_hi("NumScaleVar", [100 * x for x in share], "%.0f")
+    if conf17:
+        val, _ = conf17
+        w = {lay: [float(val[(e17_source(ds, m, lay), "50", "A-local")]["median_rel_width"]) for ds, m in E17_PAIRS]
+             for lay in ("uniform", "cluster")}
+        d = e17_dist("uniform", "50")
+        near = [c for c, _ in d[("A-local", "<0.02")]]
+        far = [c for c, _ in d[("A-local", "0.1-0.2")]]
+        far_px = [s for _, s in d[("A-local", "0.1-0.2")]]
+        lines += ["% E17c, k = 50: A-local median rel. width, clustered vs uniform anchors (range over pairs)"]
+        lines += lo_hi("NumLocalClusterWidth", w["cluster"], "%.3f") + lo_hi("NumLocalUnifWidth", w["uniform"], "%.3f")
+        lines += ["% E17c, uniform, k = 50: A-local coverage within 0.02 and at 0.1-0.2 of the diagonal; pixel share there (%)"]
+        lines += lo_hi("NumLocalNearBinCov", near, "%.2f") + lo_hi("NumLocalFarBinCov", far, "%.2f")
+        lines += lo_hi("NumLocalFarBinShare", [100 * s for s in far_px], "%.1f")
+    acc = ark_accuracy()
+    if acc:
+        lines += ["% E0, ARKitScenes, all frames (prepared lattice): image-mean AbsRel and delta1"]
+        for key, name in (("unidepth", "Uni"), ("dav2", "Dav")):
+            lines += [mac(f"NumArk{name}AbsRel", "%.3f" % acc[key][0]), mac(f"NumArk{name}DeltaOne", "%.3f" % acc[key][1])]
+    if t18:
+        ls = lambda ps, qs: [float(t18[("uniform", m, ps, qs, "A-local-split")]["cov_image_mean"])  # noqa: E731
+                             for m in E18_MODELS]
+        lines += ["% E18c, uniform: A-local-split truth coverage with laser probes and with iPad probes (both models)"]
+        lines += lo_hi("NumEEighteenLocalSplitLaser", ls("clean", "clean"), "%.3f")
+        lines += lo_hi("NumEEighteenLocalSplitIpad", ls("clean", "lidar"), "%.3f")
+    env = []
+    for p in sorted(E20_DIR.glob("arkitscenes__*__seeds*/env.csv")):
+        env += list(csv.DictReader(open(p)))
+    if env:
+        col = lambda c: [float(r[c]) for r in env]  # noqa: E731
+        lines += [f"% E20 envelope fit over {len({r['seed'] for r in env})} splits (sensor only: same for every model and layout)",
+                  mac("NumEnvSplits", str(len({r['seed'] for r in env})))]
+        lines += lo_hi("NumEnvLam", col("lam"), "%.3f")
+        lines += lo_hi("NumEnvHighA", col("a2"), "%.3f") + lo_hi("NumEnvHighB", col("b2"), "%.3f")
+        lines += lo_hi("NumEnvLowMed", col("a0") + col("a1") + col("b0") + col("b1"), "%.2f")
+        lines += lo_hi("NumEnvCalLoss", [100 * x for x in col("cal_loss")], "%.1f")
+    return lines
+
+
+def supp_tables(conf17) -> list[str]:
+    """Supplement tables from E17c: paired bootstrap intervals of Delta IS, and coverage per distance bin."""
+    if not conf17:
+        return []
+    _, cmp = conf17
+    IS = "rel_interval_score_imgmed"
+    rows = []
+    for lay in LAYOUTS:
+        for k in ("50", "200"):
+            cells = []
+            for a in ("A-dual", "A-dual-both"):
+                rs = [cmp[(e17_source(ds, m, lay), k, a, "A-dist-both", IS)] for ds, m in E17_PAIRS]
+                rel = [float(r["rel_diff_pct"]) for r in rs]
+                ci = [(100 * float(r["ci_lo"]) / float(r["mean_B"]), 100 * float(r["ci_hi"]) / float(r["mean_B"]))
+                      for r in rs]
+                below = sum(h < 0 for _, h in ci)
+                above = sum(lo_ > 0 for lo_, _ in ci)
+                t = lambda x: ("%.1f" % x).replace("-0.0", "0.0").replace("-", "$-$")  # noqa: E731
+                cells += [t(statistics.median(rel)), f"[{t(min(c[0] for c in ci))}, {t(max(c[1] for c in ci))}]",
+                          f"{below}/{above}"]
+            rows.append(f"{lay if k == '50' else ''} & {k} & " + " & ".join(cells) + " \\\\"
+                        + ("\\midrule" if k == "200" and lay != LAYOUTS[-1] else ""))
+    drows = []
+    meths = [("A-local", "\\mLocal"), ("A-dist-both", "\\mDistBoth"), ("A-dual", "\\mDual"),
+             ("A-dual-both", "\\mDualBoth")]
+    for lay in LAYOUTS:
+        d = e17_dist(lay, "50")
+        share = [statistics.median(s for _, s in d[("A-dual", b)]) for b in E14_BINS]
+        drows.append(f"\\multirow{{{len(meths) + 1}}}{{*}}{{{lay}}} & pixels (\\%) & "
+                     + " & ".join("%.1f" % (100 * s) for s in share) + " \\\\")
+        for m, label in meths:
+            cov = []
+            for b, s in zip(E14_BINS, share):
+                vals = [c for c, _ in d.get((m, b), [])]
+                cov.append("%.2f" % statistics.median(vals) if vals and s >= 1e-3 else "--")
+            drows.append(f" & {label} & " + " & ".join(cov) + " \\\\")
+        if lay != LAYOUTS[-1]:
+            drows[-1] += "\\midrule"
+    return ["%% Supplement tables (E17c): \\SuppCIRows (Delta IS vs A-dist-both, bootstrap CIs), \\SuppDistRows (k = 50)",
+            "\\providecommand{\\SuppCIRows}{}\\renewcommand{\\SuppCIRows}{%", *rows, "}",
+            "\\providecommand{\\SuppDistRows}{}\\renewcommand{\\SuppDistRows}{%", *drows, "}"]
+
+
 def rule_text() -> list[str]:
     """[theory] probe-budget design rule: P(Cov_i < c) = P(Bin(n, c) >= r) under the Beta(r, n+1-r) law."""
     def short(n, r, c=0.85):
@@ -555,7 +695,8 @@ def main() -> None:
     conf17 = e17_conf()
     block = ([BEGIN] + e17_rows(conf17) + [""] + e17_text() + [""] + e17_conf_text(conf17) + [""]
              + e19_rows(t) + [""] + e19_text(t) + [""]
-             + e18_rows(t18) + [""] + e18_text(t18) + [""] + e20_text() + [""] + rule_text() + [END])
+             + e18_rows(t18) + [""] + e18_text(t18) + [""] + e20_text() + [""] + rule_text() + [""]
+             + final_text(conf17, t18) + [""] + supp_tables(conf17) + [END])
     text = NUMBERS.read_text()
     if BEGIN in text:
         head, rest = text.split(BEGIN, 1)

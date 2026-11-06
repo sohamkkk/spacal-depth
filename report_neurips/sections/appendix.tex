@@ -262,9 +262,9 @@ ARKitScenes (upsampling val.) & \NumArkVisits{} visits & \NumArkFrames{} & Faro 
 \label{app:budget}
 With 20 probes the 10th percentile of $\Cov_i$ was \NumMeasPTenTwenty{} (law: \NumBetaPTenTwenty), and \NumESeventeenShort{} of images were short in one draw (law: \NumBetaShortOneTwenty\%).
 This is an implementation check of the randomization (\cref{fig:dual}b), not a finding.
-With 10 probes, \mLocalSplit, and hence \mDistBoth, is infinite on every image (5 calibration probes, fewer than the 9 needed), while \mDual stays finite at median width \NumWDualTenFifty/\NumWDualTenTwoHundred{} ($k=50/200$).
-In exploratory runs with 40 probes, the share of images short on average over two draws fell to \NumShortFortyLo--\NumShortFortyHi\% (law: \NumBetaShortTwoForty\%) at similar width (\NumWDualFortyFifty/\NumWDualFortyTwoHundred).
-However, under clustered anchors \mDual then misses the 10\% margin over \mDistBoth, so we keep $n=20$.
+The budget is fixed before any data are seen.
+With 10 probes, \mLocalSplit, and hence \mDistBoth, is infinite on every image by construction (5 calibration probes, fewer than the 9 that $\alpha=0.1$ needs), and \mDual's law is wider (p10 \NumBetaPTenTen, \cref{tab:budget}).
+With 40 probes the law tightens only slowly (\NumBetaShortOneForty\% short, against \NumBetaShortOneTwenty\%) at twice the measurement cost; the nominal level is the stronger lever (\cref{tab:budget}). We keep $n=20$.
 
 \section{Experiment index}
 \label{app:index}
@@ -303,4 +303,4 @@ E20 & sensor-error envelope & 2 models $\times$ 2 layouts $\times$ 2 cells; 20 $
 Every number in this report is a macro generated from the experiment summaries (\texttt{paper/numbers.tex}, written by \texttt{paper/tools/gen\_numbers.py}).
 The confirmatory comparisons come from \texttt{experiments/confirm\_analysis.py}, which writes the validity and paired-bootstrap tables, and the analysis plan with its amendment log is in \texttt{docs/ANALYSIS\_PLAN\_2026-11-03.md}.
 The broad-study numbers are taken from the project report (\texttt{docs/PROJECT\_REPORT.md}), which also lists the scripts per experiment.
-\TODO{public code link after the double-blind review period, if permitted}
+The code is at \url{https://github.com/sohamkkk/spacal-depth}.

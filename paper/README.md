@@ -46,7 +46,7 @@ The switch is `\envelopemaintrue` / `\envelopemainfalse`, the single switch in `
 
 ## Draft markers (remove or switch off before submission)
 
-- `\prelim{}` marks an exploratory number, shown in **orange**. The per-cell `\ENineteen` lookup (numbers.tex L167, hand part) still makes every E19 table cell orange; the fix is in AUTHOR_ASKS item 8. Set `\showprelimfalse` in `macros.tex` for black.
+- `\prelim{}` marks an exploratory number, shown in **orange**. None is rendered any more: the generated block of `numbers.tex` overrides every hand-written exploratory macro still in use (including `\ENineteen`) with confirmatory or complete-data values. Set `\showprelimfalse` in `macros.tex` for the submission.
 - `\pending{}` and `\placeholder{title}{text}` mark a still-running item, shown in red.
 - `\verify{}` marks an unverified fact, shown in red. None are left.
 - `\TODO{}` marks a writing task. Only the envelope gate is left.

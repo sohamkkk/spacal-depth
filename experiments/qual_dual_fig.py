@@ -3,6 +3,8 @@
     python -m experiments.qual_dual_fig sheet                    # contact sheet of all candidates (choosing frames)
     python -m experiments.qual_dual_fig teaser --id <sample_id>  # paper teaser strip -> paper/figures/teaser_qual.pdf
     python -m experiments.qual_dual_fig sensor --ids <id> ...    # Supp. sensor figure -> paper/figures/sensor_qual.pdf
+    python -m experiments.qual_dual_fig layouts --id <id>        # one frame under all five layouts (report)
+    python -m experiments.qual_dual_fig models --ids <id> ...    # RGB, laser, iPad, two models, error (report)
 
 Backgrounds are the RGB frames of scripts/export_arkit_frames.py (<frames>/<sample_id>_rgb.png) when present,
 else the laser depth on the stride-8 grid. Miss maps colour the evaluation pixels (neither structured anchor
@@ -11,6 +13,7 @@ nor probe) whose laser truth lies outside the interval.
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 
 import matplotlib
@@ -197,6 +200,100 @@ def sensor(fr: Frames, sids: list[str], cells: tuple[str, str], out: Path):
     save(fig, out)
 
 
+LAYOUTS = ("uniform", "rows", "cluster", "edges", "near")
+
+
+def layouts(run_prefix: str, frames_dir: Path, sid: str, cell: str, out: Path):
+    frs = {lay: Frames(results_dir("qual_dual") / f"{run_prefix}__{lay}", frames_dir) for lay in LAYOUTS}
+    h, w = frs["uniform"].shape(sid)
+    fig, axes = plt.subplots(3, len(LAYOUTS), figsize=(6.9, 6.9 / len(LAYOUTS) * h / w * 3 + 0.2), squeeze=False,
+                             gridspec_kw={"wspace": 0.03, "hspace": 0.05})
+    rows = ("anchors $\\bullet$, probes $\\times$", "A-local misses", "A-dual misses")
+    for j, lay in enumerate(LAYOUTS):
+        fr = frs[lay]
+        show_background(axes[0, j], fr, sid)
+        draw_anchors(axes[0, j], fr, sid, scale=0.8)
+        axes[0, j].set_title(lay, fontsize=6.5, pad=2)
+        for i, meth in ((1, "A-local"), (2, "A-dual")):
+            m = fr.miss(sid, cell, meth)
+            show_background(axes[i, j], fr, sid, fade=0.35)
+            overlay_miss(axes[i, j], fr, sid, m)
+            draw_anchors(axes[i, j], fr, sid, probes=meth == "A-dual", scale=0.6)
+            label(axes[i, j], f"cov {m['cov']:.2f}  w {100 * m['width']:.0f}%")
+    for i, r in enumerate(rows):
+        axes[i, 0].set_ylabel(r, fontsize=6, labelpad=2)
+    save(fig, out)
+
+
+class Prepared:
+    """Per-image lattice of a prepared table (no torch): row, col, prediction and laser truth."""
+
+    def __init__(self, dataset: str, model: str):
+        root = Path(os.environ.get("SPACAL_PREPARED_ROOT", "prepared_new"))
+        z = np.load((root if root.is_absolute() else ROOT / root) / f"{dataset}__{model}.npz", allow_pickle=True)
+        self.ids = {s: i for i, s in enumerate(z["img__sample_id"])}
+        self.off = z["offsets"]
+        self.hw = np.stack([z["img__height"], z["img__width"]], axis=1)
+        self.cols = {k: z[f"pix__{k}"] for k in ("row", "col", "pred", "gt")}
+
+    def get(self, sid: str) -> dict:
+        i = self.ids[sid]
+        return {k: v[self.off[i]:self.off[i + 1]] for k, v in self.cols.items()}
+
+    def shape(self, sid: str) -> tuple[int, int]:
+        h, w = self.hw[self.ids[sid]]
+        return int(h), int(w)
+
+
+def models(frames_dir: Path, sids: list[str], model_names: dict[str, str], out: Path):
+    preds = {name: Prepared("arkitscenes", m) for m, name in model_names.items()}
+    first = next(iter(preds))
+    cols = ["RGB", "laser depth (truth)", "iPad LiDAR", *preds, f"|log error|, {first}"]
+    fig, axes = plt.subplots(len(sids), len(cols), figsize=(6.9, 6.9 / len(cols) * 0.75 * len(sids) + 0.15),
+                             squeeze=False, gridspec_kw={"wspace": 0.03, "hspace": 0.04})
+    cmap = plt.get_cmap("turbo").copy()
+    cmap.set_bad("0.85")
+    for i, sid in enumerate(sids):
+        h, w = preds[first].shape(sid)
+        axes[i, 0].imshow(Image.open(frames_dir / f"{sid}_rgb.png").convert("RGB"), extent=(0, w, h, 0))
+        gt = np.asarray(Image.open(frames_dir / f"{sid}_gt.png")).astype(float) / 1000
+        lid = np.asarray(Image.open(frames_dir / f"{sid}_lidar.png")).astype(float) / 1000
+        gt[gt <= 0], lid[lid <= 0] = np.nan, np.nan
+        vmin, vmax = np.nanpercentile(gt, [2, 98])
+        kw = {"extent": (0, w, h, 0), "cmap": cmap, "vmin": vmin, "vmax": vmax}
+        axes[i, 1].imshow(gt, interpolation="antialiased", **kw)
+        axes[i, 2].imshow(lid, interpolation="antialiased", **kw)
+        label(axes[i, 1], f"{vmin:.1f}–{vmax:.1f} m")
+        err = None
+        for j, (name, pt) in enumerate(preds.items()):
+            d = pt.get(sid)
+            grid = np.full(((h + STRIDE - 1) // STRIDE, (w + STRIDE - 1) // STRIDE), np.nan)
+            grid[d["row"] // STRIDE, d["col"] // STRIDE] = d["pred"]
+            axes[i, 3 + j].imshow(grid, interpolation="nearest", **kw)
+            label(axes[i, 3 + j], f"AbsRel {np.mean(np.abs(d['pred'] - d['gt']) / d['gt']):.3f}")
+            if err is None:
+                err = np.full_like(grid, np.nan)
+                err[d["row"] // STRIDE, d["col"] // STRIDE] = np.abs(np.log(d["pred"] / d["gt"]))
+        emap = plt.get_cmap("magma").copy()
+        emap.set_bad("0.85")
+        im = axes[i, -1].imshow(err, extent=(0, w, h, 0), cmap=emap, vmin=0, vmax=0.3, interpolation="nearest")
+        label(axes[i, -1], f"median {np.nanmedian(err):.2f}")
+        for ax in axes[i]:
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.set_aspect("auto")
+            for s in ax.spines.values():
+                s.set_linewidth(0.4)
+    for ax, c in zip(axes[0], cols):
+        ax.set_title(c, fontsize=6, pad=2)
+    pos = axes[-1, -1].get_position()
+    cax = fig.add_axes([pos.x0 + 0.1 * pos.width, pos.y0 - 0.035, 0.8 * pos.width, 0.012])
+    cb = fig.colorbar(im, cax=cax, orientation="horizontal", ticks=[0, 0.1, 0.2, 0.3])
+    cb.ax.tick_params(labelsize=5, pad=1, length=1.5)
+    cb.outline.set_linewidth(0.4)
+    save(fig, out)
+
+
 def sheet(fr: Frames, cell: str, last: str, kinds: list[str], out: Path):
     rows = fr.cand[fr.cand.kind.isin(kinds)].drop_duplicates("sample_id")
     fig, axes = plt.subplots(len(rows), 3, figsize=(6, 1.55 * len(rows)), squeeze=False,
@@ -216,7 +313,7 @@ def sheet(fr: Frames, cell: str, last: str, kinds: list[str], out: Path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=("sheet", "teaser", "sensor"))
+    ap.add_argument("what", choices=("sheet", "teaser", "sensor", "layouts", "models"))
     ap.add_argument("--run", default="arkitscenes__unidepthv2-large__cluster")
     ap.add_argument("--frames", default=str(ROOT / "results" / "qual_frames"))
     ap.add_argument("--id")
@@ -234,6 +331,12 @@ def main():
     plt.rcParams.update(STYLE)
     if args.what == "sheet":
         sheet(fr, args.cell, args.sensor_cells[-1], args.kinds, Path(args.out or run_dir / "sheet.pdf"))
+    elif args.what == "layouts":
+        layouts(args.run.rsplit("__", 1)[0], Path(args.frames), args.id, args.cell,
+                Path(args.out or ROOT / "report_neurips/figures/layouts_qual.pdf"))
+    elif args.what == "models":
+        models(Path(args.frames), args.ids, {"unidepthv2-large": "UniDepthV2", "dav2-indoor-large": "DA-V2"},
+               Path(args.out or ROOT / "report_neurips/figures/models_qual.pdf"))
     elif args.what == "teaser":
         sid = args.id or fr.cand[fr.cand.kind == "teaser"].iloc[0].sample_id
         teaser(fr, sid, args.cell, args.n_probes, args.alpha, Path(args.out or ROOT / "paper/figures/teaser_qual.pdf"))

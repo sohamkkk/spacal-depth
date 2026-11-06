@@ -47,5 +47,15 @@ Our contribution is their composition for sparse-guided dense depth, the analysi
 \paragraph{Status of the numbers.}
 The project ends with a confirmatory replication whose analysis plan was fixed before the runs (\cref{sec:protocol}).
 All of it is complete: the replication on NYU/KITTI (E17c), the depth-completion comparison (E19c), the replication of the sensor study (E18c) and the sensor-error envelope (E20).
-Numbers printed in \prelim{orange} are exploratory and were not replicated (motivation numbers, the probe-count ablation and \omnidc from iPad anchors).
-Numbers from the broad study (E0--E16) are final for that study and printed in black.
+Every number in this report comes either from these confirmatory runs or from complete runs of the broad study (E0--E16); results that were only explored and not replicated are not reported.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/teaser_qual.pdf}
+\caption{\textbf{Reusing structured depth measurements for calibration fails silently; separating their roles does not.}
+A frozen monocular model (UniDepthV2) plus 200 metric measurements on an ARKitScenes test frame: 180 placed by the sensor in one cluster ($\bullet$) and 20 uniformly random probes ($\times$).
+(b)~Calibrating within the image on the clustered measurements (\mLocal) gives intervals 2\% wide that hold near the cluster and miss the true depth over most of the frame (vermillion: truth farther than the interval, blue: nearer; dark grey: no ground truth).
+(c)~\mDual lets the cluster correct the prediction and only the probes calibrate it.
+(d)~Over all test images, \mLocal's per-image coverage scatters far below the $0.9$ target (dotted), while \mDual's follows the law of \cref{prop:budget}. The frame has \mLocal coverage near its median over test images.}
+\label{fig:teaser}
+\end{figure}

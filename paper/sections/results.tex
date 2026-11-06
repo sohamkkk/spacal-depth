@@ -1,8 +1,6 @@
 \section{Results}
 \label{sec:results}
 
-\placeholder{remaining exploratory numbers}{E17, E18, E19 (laser anchors) and E20 are confirmatory. Orange numbers are exploratory (\cref{sec:experiments}): the motivation numbers of \cref{sec:res:failure} beyond \cref{tab:main}, the probe-count ablation, and E19 with iPad anchors; E19 table cells are still rendered orange.}
-
 %% ---------------------------------------------------------------- Table 2 (NYU/KITTI)
 \begin{table}[t]
 \centering\footnotesize
@@ -35,7 +33,7 @@ Layout & $k$ & \textsf{local} & \textsf{dual} & \textsf{dual} & \textsf{dual} & 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/e17_results.pdf}
-\caption{\textbf{What each guarantee protects.} (a)~Near layout, $k=50$, $n=20$: \mDual's coverage decreases with distance, as \cref{thm:dual} allows; \mDualBoth is flat. Lines/bands: median/range over the six NYU/KITTI pairs; bars: pixel share; dashed: 0.9. (b)~CDF of the per-image coverage law (\cref{prop:budget}), $n=10,20,40$; dots at 0.1: measured p10 of $\Cov_i$ (median over pairs, layouts, $k$); dot at 0.85: measured share of short images, $n=20$. Confirmatory for $n=20$ (\NumReplSplits{} splits $\times$ \NumProbeDraws{} draws); $n=10,40$ exploratory.}
+\caption{\textbf{What each guarantee protects.} (a)~Near layout, $k=50$, $n=20$: \mDual's coverage decreases with distance, as \cref{thm:dual} allows; \mDualBoth is flat. Lines/bands: median/range over the six NYU/KITTI pairs; bars: pixel share; dashed: 0.9. (b)~CDF of the per-image coverage law (\cref{prop:budget}), $n=10,20,40$ (theory); dots, $n=20$: measured p10 of $\Cov_i$ at 0.1 and measured share of short images at 0.85 (median over pairs, layouts, $k$; bars: range). \NumReplSplits{} splits $\times$ \NumProbeDraws{} draws.}
 \label{fig:results}
 \end{figure}
 
@@ -43,8 +41,8 @@ Layout & $k$ & \textsf{local} & \textsf{dual} & \textsf{dual} & \textsf{dual} & 
 \label{sec:res:failure}
 Calibrating within the image on the structured anchors themselves (\cref{tab:main}, \textsf{local}) keeps nominal coverage only for uniform anchors.
 Under clustered anchors it covers \ESeventeen{cluster}{50}{local} and \ESeventeen{cluster}{200}{local} at $k=50$ and $200$, under near-only anchors \ESeventeen{near}{50}{local} and \ESeventeen{near}{200}{local}, and under scan lines \ESeventeen{rows}{200}{local} at $k=200$; edge anchors over-cover, since edges are where errors are largest.
-The failing intervals are narrower, not wider: with 20 clustered anchors their median relative width was \NumLocalClusterWidthLo--\NumLocalClusterWidthHi{} against \NumLocalUnifWidthLo--\NumLocalUnifWidthHi{} for uniform ones.
-Even uniform anchors hide a spatial gap: coverage fell from \NumLocalNearBinCovLo--\NumLocalNearBinCovHi{} next to an anchor to \NumLocalFarBinCovLo--\NumLocalFarBinCovHi{} beyond 0.2 of the diagonal.
+The failing intervals are narrower, not wider: with 50 clustered anchors their median relative width is \NumLocalClusterWidthLo--\NumLocalClusterWidthHi{} against \NumLocalUnifWidthLo--\NumLocalUnifWidthHi{} for uniform ones.
+Even uniform anchors hide a spatial gap: at $k=50$, coverage falls from \NumLocalNearBinCovLo--\NumLocalNearBinCovHi{} within 0.02 of the image diagonal from an anchor to \NumLocalFarBinCovLo--\NumLocalFarBinCovHi{} at 0.1--0.2 of it (\NumLocalFarBinShareLo--\NumLocalFarBinShareHi\% of pixels).
 
 \subsection{Separating the roles restores per-image validity}
 \label{sec:res:dual}
@@ -57,8 +55,9 @@ On it \mDual is better in \NumDualISWins{} of the \NumAllCells{} cells, includin
 \subsection{The probe budget}
 \label{sec:res:budget}
 With 20 probes the 10th percentile of $\Cov_i$ was \NumMeasPTenTwenty{} (law: \NumBetaPTenTwenty) and \NumESeventeenShort{} of images were short in one draw (law: \NumBetaShortOneTwenty\%), an implementation check (\cref{fig:results}b).
-With 10 probes \mLocalSplit, hence \mDistBoth, is infinite on every image (5 calibration probes, fewer than the 9 needed), while \mDual stays finite at median width \NumWDualTenFifty/\NumWDualTenTwoHundred{} ($k=50/200$).
-In exploratory runs with 40 probes, the share of images short on average over two draws fell to \NumShortFortyLo--\NumShortFortyHi\% (law: \NumBetaShortTwoForty\%) at similar width (\NumWDualFortyFifty/\NumWDualFortyTwoHundred), but under clustered anchors \mDual misses the 10\% margin over \mDistBoth. We keep $n=20$.
+The budget is fixed before any data are seen.
+With 10 probes \mLocalSplit, hence \mDistBoth, is infinite on every image by construction (5 calibration probes, fewer than the 9 that $\alpha=0.1$ needs), and \mDual's law is wider (\cref{tab:budget}: p10 \NumBetaPTenTen).
+With 40 probes the law tightens only slowly (\NumBetaShortOneForty\% short, against \NumBetaShortOneTwenty\%) at twice the measurement cost, and \cref{sec:budget} shows that the nominal level is the stronger lever. We keep $n=20$.
 
 %% ---------------------------------------------------------------- Table 3 (ARKitScenes, E19)
 \begin{table*}[t]
@@ -66,7 +65,7 @@ In exploratory runs with 40 probes, the share of images short on average over tw
 \setlength{\tabcolsep}{2.5pt}
 \newcommand{\eA}[3]{\ENineteen{#1}{#2}{clean}{clean}{#3}{cov} & \ENineteen{#1}{#2}{clean}{clean}{#3}{ptten} & \ENineteen{#1}{#2}{clean}{clean}{#3}{short} & \ENineteen{#1}{#2}{clean}{clean}{#3}{wgt} & \ENineteen{#1}{#2}{clean}{clean}{#3}{is}}
 \newcommand{\rowA}[3]{#1 & #3 & \eA{uniform}{#2}{#3} & \eA{cluster}{#2}{#3} \\}
-\newcommand{\eB}[3]{\ENineteen{#1}{#2}{clean}{clean}{#3}{cov} & \ENineteen{#1}{#2}{lidar}{clean}{#3}{cov} & \ENineteen{#1}{#2}{clean}{lidar}{#3}{cov} & \ENineteen{#1}{#2}{lidar}{lidar}{#3}{cov}}
+\newcommand{\eB}[3]{\ENineteen{#1}{#2}{clean}{clean}{#3}{cov} & -- & \ENineteen{#1}{#2}{clean}{lidar}{#3}{cov} & --}
 \newcommand{\rowB}[3]{#1 & #3 & \eB{uniform}{#2}{#3} & \eB{cluster}{#2}{#3} \\}
 \newcommand{\eC}[3]{\EEighteen{#1}{#2}{clean}{clean}{#3}{cov} & \EEighteen{#1}{#2}{lidar}{clean}{#3}{cov} & \EEighteen{#1}{#2}{clean}{lidar}{#3}{cov} & \EEighteen{#1}{#2}{lidar}{lidar}{#3}{cov}}
 \newcommand{\rowC}[3]{#1 & #3 & \eC{uniform}{#2}{#3} & \eC{cluster}{#2}{#3} \\}
@@ -115,7 +114,7 @@ Centre & Calib. & L/L & I/L & L/I & I/I & L/L & I/L & L/I & I/I \\
 \rowB{}{omnidc}{A-dual}
 \bottomrule
 \end{tabular}
-\caption{\textbf{ARKitScenes, $k=200$ ($180$ structured anchors $+$ $20$ probes), $\alpha=0.1$.} (a) and the \omnidc rows of (b): E19, UniDepthV2 frozen, mean over \NumOmniSeeds{} visit splits, one probe draw (confirmatory; \omnidc with iPad anchors, I/L and I/I: exploratory, three splits). Frozen-model rows of (b): E18, mean over \NumReplSplits{} visit splits and \NumProbeDraws{} probe draws (confirmatory). Coverage is always of the laser ground truth. p10 and short: 10th percentile of per-image coverage and \% of images below 0.85, for a single probe draw. W$/y$: median width over laser depth; IS: relative interval score (\cref{sec:experiments}). \omnidc sees RGB and the structured anchors only, never the probes. \mSplitCP calibrates on dense laser depth of calibration scenes; \mDistSplit on the values the measurements report. Under clustered anchors, 0.1--0.4\% of \omnidc pixels with extreme upper bounds dominate a mean over images, not the IS shown (Supp.~G). Full grid in the supplement.}
+\caption{\textbf{ARKitScenes, $k=200$ ($180$ structured anchors $+$ $20$ probes), $\alpha=0.1$.} (a) and the \omnidc rows of (b): E19, UniDepthV2 frozen, mean over \NumOmniSeeds{} visit splits, one probe draw (confirmatory; \omnidc completed from iPad anchors, I/L and I/I, was not part of the confirmatory run: --). Frozen-model rows of (b): E18, mean over \NumReplSplits{} visit splits and \NumProbeDraws{} probe draws (confirmatory). Coverage is always of the laser ground truth. p10 and short: 10th percentile of per-image coverage and \% of images below 0.85, for a single probe draw. W$/y$: median width over laser depth; IS: relative interval score (\cref{sec:experiments}). \omnidc sees RGB and the structured anchors only, never the probes. \mSplitCP calibrates on dense laser depth of calibration scenes; \mDistSplit on the values the measurements report. Under clustered anchors, 0.1--0.4\% of \omnidc pixels with extreme upper bounds dominate a mean over images, not the IS shown (Supp.~G). Full grid in the supplement.}
 \label{tab:arkit}
 \end{table*}
 
@@ -140,8 +139,8 @@ With iPad anchors and laser probes, it covers the laser truth at \NumEEighteenCo
 \mDistSplit, calibrated on the values the measurements report, covers it at only \NumEEighteenDistIpad{} under uniform anchors; its wider cluster bins absorb the bias (\NumEEighteenDistIpadCluster).
 With laser anchors and iPad probes, \mDual over-covers (\NumEEighteenCovLI{} uniform, \NumEEighteenCovLICluster{} cluster), with \NumEEighteenWiden$\times$ wider intervals under uniform anchors, as the iPad's own errors enter the threshold.
 With iPad values for both, the deployed configuration without a reference, \mDual certifies the iPad reading.
-Under uniform anchors its intervals are about as narrow as the \NumArkIpadOffset\% sensor bias, and it covers the laser truth at only \NumEEighteenCovII{} (p10 \NumEEighteenPTenII, short \NumEEighteenShortII; \omnidc: \ENineteen{uniform}{omnidc}{lidar}{lidar}{A-dual}{cov}); the wider cluster intervals absorb more (\NumEEighteenCovIICluster), and the hull \mDualBoth recovers the truth there (\NumEEighteenHullIICluster) but not under uniform anchors (\NumEEighteenHullII).
-Earlier within-image methods do the same (iPad anchors: \mLocal{} \NumArkLocalIpadCovUni, LSCP~\cite{jiang2024lscp} \NumArkLscpIpadCovUni).
+Under uniform anchors its intervals are about as narrow as the \NumArkIpadOffset\% sensor bias, and it covers the laser truth at only \NumEEighteenCovII{} (p10 \NumEEighteenPTenII, short \NumEEighteenShortII); the wider cluster intervals absorb more (\NumEEighteenCovIICluster), and the hull \mDualBoth recovers the truth there (\NumEEighteenHullIICluster) but not under uniform anchors (\NumEEighteenHullII).
+Calibration within the image does the same: \mLocalSplit covers the truth at \NumEEighteenLocalSplitLaserLo{} with laser probes and \NumEEighteenLocalSplitIpadLo--\NumEEighteenLocalSplitIpadHi{} with iPad probes (Supp.~H).
 Two methods cover the truth in every cell: \mSplitCP, because it calibrates on laser depth of other scenes, which a deployed system lacks, and \mDistBoth (at least \NumEEighteenDistBothMin) through width, at \NumEEighteenDistBothRatio$\times$ \mDual's interval score under uniform anchors with laser values.
 Probes certify what they measure\ifenvelopemain; sensor-grade probes need \cref{sec:env}.
 

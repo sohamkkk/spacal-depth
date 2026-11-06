@@ -417,7 +417,9 @@ def fig_e17(alpha=0.1, k=50, layout="near", base="S2-log", n_probes=(10, 20, 40)
     d = load("e17_conf" if conf else "e17_p20_g05", f"*__{layout}*", "dist_summary.csv", ["k", "method", "dist_bin"])
     summ = {}
     for n in n_probes:
-        exp = "e17_conf" if conf and n == 20 else f"e17_p{n}_g05"
+        if conf and n != 20:
+            continue
+        exp = "e17_conf" if conf else f"e17_p{n}_g05"
         s = load(exp, "*", "summary.csv", ["k", "method"])
         if s is not None:
             summ[n] = s[s.method == "A-dual"]
@@ -452,11 +454,14 @@ def fig_e17(alpha=0.1, k=50, layout="near", base="S2-log", n_probes=(10, 20, 40)
 
     grid = np.linspace(0.55, 1, 300)
     colors = {10: "tab:orange", 20: "tab:blue", 40: "tab:green"}
-    for n, s in summ.items():
+    for n in n_probes:
         r = int(np.ceil((n + 1) * (1 - alpha)))
         law = beta_law(r, n + 1 - r)
         c = colors.get(n, "k")
         bx.plot(grid, law.cdf(grid), color=c, lw=0.8, label=f"n = {n}")
+        if n not in summ:
+            continue
+        s = summ[n]
         p10 = s.cov_image_p10.dropna()
         bx.plot([p10.min(), p10.max()], [0.1, 0.1], color=c, lw=2.2, alpha=0.45, solid_capstyle="butt")
         bx.plot(p10.median(), 0.1, "o", color=c, ms=2.2, mec="k", mew=0.3)

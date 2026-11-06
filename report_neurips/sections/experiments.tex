@@ -22,6 +22,14 @@ NYU and KITTI are not in the training mixtures of these models.
 UniDepthV2's training mixture includes ARKitScenes, which can affect width but not any guarantee; Depth Pro was trained on ARKitScenes and is not used there.
 On ARKitScenes we also use the depth-completion network \omnidc~\cite{zuo2025omnidc} (v1.1, trained only on synthetic data).
 It sees RGB and the structured anchors only, never the probes.
+\Cref{fig:models} shows the ARKitScenes inputs and the two frozen models used there.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/models_qual.pdf}
+\caption{\textbf{ARKitScenes: the reference, the deployed sensor and two frozen models} (four frames from different homes, chosen for their depth range, so their errors are below the dataset average of AbsRel \NumArkUniAbsRel{} for UniDepthV2 and \NumArkDavAbsRel{} for DA-V2). Depth panels of a row share one colour scale (range in the laser panel; grey: no value). The laser scan is the ground truth; the iPad LiDAR is smooth and reads slightly nearer. Predictions and the error map are shown on the evaluation lattice (stride 8). DA-V2 (indoor metric) overestimates depth throughout, the global scale error that anchors remove.}
+\label{fig:models}
+\end{figure}
 
 \paragraph{Metrics.}
 Coverage is image-averaged (\cref{eq:cov}).
@@ -61,7 +69,7 @@ E1, E8 units & Run-to-run SD of coverage follows the Beta law with $n=$ \#images
 Scene level & Image-event calibration is slightly short on scene-clustered data (0.884--0.897); its scene version meets the target (0.908--0.940) for 3--12\% more width. \\
 E5 shift, ETH3D & Calibrating on one dataset and testing on another: 33--85\% coverage. On ETH3D (13 scenes) a scene-dependent scale bias drops Depth Pro to 0.69; scene-level calibration needs $\ge9$ calibration scenes and returns infinite intervals with 4. \\
 E11 anchors & One global scale error explains \NumScaleVarLo--\NumScaleVarHi\% of image-to-image variation in coverage. About 20 random anchors match an oracle that knows each image's scale, giving intervals 1.1--3.7$\times$ narrower. \mLocal matches its exact theory (0.908--0.910 vs.\ 0.909 at $k=20$), and \mBoth cuts short images from 16\% to 0.2\% (NYU, DA-V2). \\
-E13 structured & \mLocal on structured anchors covers \NumLocalClusterCovLo--\NumLocalClusterCovHi{} (cluster), \NumLocalNearCovLo--\NumLocalNearCovHi{} (near), \NumLocalRowsCovLo--\NumLocalRowsCovHi{} (rows), with \emph{narrower} intervals. Cross-image \mRescale and \mHybrid stay valid under every layout. \\
+E13 structured & \mLocal on structured anchors covers \ESeventeen{cluster}{50}{local}/\ESeventeen{cluster}{200}{local} (cluster), \ESeventeen{near}{50}{local}/\ESeventeen{near}{200}{local} (near), \ESeventeen{rows}{50}{local}/\ESeventeen{rows}{200}{local} (rows; $k=50/200$, median over pairs, E17c), with \emph{narrower} intervals. Cross-image \mRescale and \mHybrid stay valid under every layout. \\
 E14 \mDist & Coverage is flat across distance to the nearest anchor under all five layouts, and up to 67\% narrower than \mHybrid. With 20 of the $k$ anchors spent at random, \mDistBoth covers 0.965--0.983 with $\le$0.3\% short images. \\
 E15 mismatch & Calibrating under one layout and deploying another leaves coverage as low as 0.77 (\mHybrid, edges $\to$ cluster). The largest threshold over layouts (@max) is valid for each layout. LSCP covers 0.17--0.93, depending on the layout. \\
 E16 noise & With matched sensor noise, every cross-image guarantee holds (0.916--0.925). Calibrating on clean anchors fails under outliers (\mDist 0.66) and a 5\% bias (0.36--0.86). Within-image methods cover the sensor reading, so a bias breaks them (0.38--0.78). \\
@@ -151,7 +159,16 @@ Layout & $k$ & \textsf{local} & \textsf{dual} & \textsf{dual} & \textsf{dual} & 
 Calibrating within the image on the structured anchors themselves keeps nominal coverage only for uniform anchors.
 Under clustered anchors it covers \ESeventeen{cluster}{50}{local} and \ESeventeen{cluster}{200}{local} at $k=50$ and 200; under near-only anchors \ESeventeen{near}{50}{local} and \ESeventeen{near}{200}{local}; under scan lines \ESeventeen{rows}{200}{local} at $k=200$.
 Edge anchors over-cover, since edges are where errors are largest.
-The failing intervals are narrower, not wider: with 20 clustered anchors their median relative width was \NumLocalClusterWidthLo--\NumLocalClusterWidthHi, against \NumLocalUnifWidthLo--\NumLocalUnifWidthHi{} for uniform ones.
+The failing intervals are narrower, not wider: with 50 clustered anchors their median relative width is \NumLocalClusterWidthLo--\NumLocalClusterWidthHi, against \NumLocalUnifWidthLo--\NumLocalUnifWidthHi{} for uniform ones.
+Even uniform anchors hide a spatial gap: at $k=50$, coverage falls from \NumLocalNearBinCovLo--\NumLocalNearBinCovHi{} within 0.02 of the image diagonal from an anchor to \NumLocalFarBinCovLo--\NumLocalFarBinCovHi{} at 0.1--0.2 of it.
+\Cref{fig:layouts} shows both effects on one frame.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/layouts_qual.pdf}
+\caption{\textbf{One ARKitScenes test frame under the five anchor layouts} (UniDepthV2, $k=200$: 180 structured anchors $\bullet$ and 20 probes $\times$, laser values, split 0, one draw). Rows 2--3: pixels whose true depth lies outside the interval (vermillion: truth farther, blue: nearer); cov: coverage of the frame's evaluation pixels; w: median relative width. \mLocal, calibrated on the structured anchors, holds only where they are representative: under clustered and near-only anchors it covers 0.41 and 0.40 with intervals 1--2\% wide. \mDual, calibrated on the probes, stays near 0.9 in every layout; its frame-to-frame spread around $0.905$ is the law of \cref{prop:budget}.}
+\label{fig:layouts}
+\end{figure}
 
 \paragraph{Separating the roles restores per-image validity.}
 \mDual covers \NumDualCovLo--\NumDualCovHi{} in every layout, $k$ and pair, at its theoretical rate $r/(n+1)=\NumDualCovTheory$ (within two standard errors in \NumDualExactCells{} of the \NumAllCells{} pair--layout--$k$ cells).
@@ -165,13 +182,13 @@ Under clustered anchors its two halves are centred differently and it gains only
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.8\linewidth]{figures/e17_results.pdf}
-\caption{\textbf{What each guarantee protects (E17).} (a)~Near layout, $k=50$, $n=20$: \mDual's coverage decreases with distance, as \cref{thm:dual} allows; \mDualBoth is flat. Lines/bands: median/range over the six NYU/KITTI pairs; bars: pixel share; dashed: 0.9. (b)~CDF of the per-image coverage law (\cref{prop:budget}) for $n=10,20,40$; dots at 0.1: measured p10 of $\Cov_i$ (median over pairs, layouts and $k$); dot at 0.85: measured share of short images, $n=20$. Confirmatory for $n=20$; $n=10,40$ exploratory.}
+\caption{\textbf{What each guarantee protects (E17).} (a)~Near layout, $k=50$, $n=20$: \mDual's coverage decreases with distance, as \cref{thm:dual} allows; \mDualBoth is flat. Lines/bands: median/range over the six NYU/KITTI pairs; bars: pixel share; dashed: 0.9. (b)~CDF of the per-image coverage law (\cref{prop:budget}) for $n=10,20,40$ (theory); dots, $n=20$: measured p10 of $\Cov_i$ at 0.1 and measured share of short images at 0.85 (median over pairs, layouts and $k$; bars: range).}
 \label{fig:dual}
 \end{figure}
 
 \paragraph{The probe budget.}
 With 20 probes the 10th percentile of $\Cov_i$ was \NumMeasPTenTwenty{} (law: \NumBetaPTenTwenty), an implementation check of the randomization (\cref{fig:dual}b).
-With 10 probes \mDistBoth is infinite on every image while \mDual stays finite; with 40 the short share falls but \mDual misses the 10\% margin over \mDistBoth under clustered anchors, so we keep $n=20$ (\cref{app:budget}).
+With 10 probes \mDistBoth is infinite on every image by construction; 40 probes tighten the law only slowly at twice the measurement cost, so we keep $n=20$ (\cref{app:budget}).
 
 \subsection{Which centre to calibrate: a depth-completion network or the frozen model (E19c)}
 \label{sec:res:omni}
@@ -231,10 +248,10 @@ A mean-over-images IS would instead be dominated by a few \omnidc pixels with ex
 
 \begin{table}[t]
 \centering\footnotesize
-\caption{\textbf{Laser-truth coverage by value source of anchors / probes} (ARKitScenes, $k=200$, $\alpha=0.1$; L $=$ laser, I $=$ iPad LiDAR). Frozen-model rows: confirmatory E18c, mean over \NumReplSplits{} visit splits and ten probe draws; \mDualEnv: E20, same splits and draws, iPad probes only. \omnidc rows: E19, laser anchors confirmatory (ten splits); iPad anchors (I/L, I/I) exploratory (three splits).}
+\caption{\textbf{Laser-truth coverage by value source of anchors / probes} (ARKitScenes, $k=200$, $\alpha=0.1$; L $=$ laser, I $=$ iPad LiDAR). Frozen-model rows: confirmatory E18c, mean over \NumReplSplits{} visit splits and ten probe draws; \mDualEnv: E20, same splits and draws, iPad probes only. \omnidc rows: E19c, ten splits; \omnidc completed from iPad anchors (I/L, I/I) was not part of the confirmatory run (--).}
 \label{tab:sensor}
 \setlength{\tabcolsep}{4pt}
-\newcommand{\eB}[3]{\ENineteen{#1}{#2}{clean}{clean}{#3}{cov} & \ENineteen{#1}{#2}{lidar}{clean}{#3}{cov} & \ENineteen{#1}{#2}{clean}{lidar}{#3}{cov} & \ENineteen{#1}{#2}{lidar}{lidar}{#3}{cov}}
+\newcommand{\eB}[3]{\ENineteen{#1}{#2}{clean}{clean}{#3}{cov} & -- & \ENineteen{#1}{#2}{clean}{lidar}{#3}{cov} & --}
 \newcommand{\rowB}[3]{#1 & #3 & \eB{uniform}{#2}{#3} & \eB{cluster}{#2}{#3} \\}
 \newcommand{\eC}[3]{\EEighteen{#1}{#2}{clean}{clean}{#3}{cov} & \EEighteen{#1}{#2}{lidar}{clean}{#3}{cov} & \EEighteen{#1}{#2}{clean}{lidar}{#3}{cov} & \EEighteen{#1}{#2}{lidar}{lidar}{#3}{cov}}
 \newcommand{\rowC}[3]{#1 & #3 & \eC{uniform}{#2}{#3} & \eC{cluster}{#2}{#3} \\}
@@ -259,7 +276,7 @@ Centre & Calibration & L/L & I/L & L/I & I/I & L/L & I/L & L/I & I/I \\
 \end{table}
 
 \Cref{tab:sensor} varies what the measurements report, with coverage always measured against the laser.
-With laser probes, \mDual's spread on ARKitScenes, over UniDepthV2 and DA-V2 (AbsRel \NumArkUniAbsRel{} and \NumArkDavAbsRel), five layouts and two budgets, is as predicted (p10 \NumArkPTenLo--\NumArkPTenHi).
+With laser probes, \mDual's spread on ARKitScenes, over UniDepthV2 and DA-V2 (AbsRel \NumArkUniAbsRel{} and \NumArkDavAbsRel) and both layouts, is as predicted (p10 \NumEEighteenPTen, short \NumEEighteenShort).
 This is a check on data that were not used to choose $\gamma$.
 \begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
 \item \emph{iPad anchors, laser probes:} \mDual covers the laser truth at \NumEEighteenCovIL{} in both layouts, with the clean-value spread (p10 \NumEEighteenPTen), because the probes measure the truth and absorb the anchors' bias into the threshold.
@@ -268,8 +285,16 @@ This is a check on data that were not used to choose $\gamma$.
 \item \emph{iPad values for both}, the deployed configuration without a reference: \mDual certifies the iPad reading.
 Under uniform anchors its intervals are about as narrow as the \NumArkIpadOffset\% sensor bias, and it covers the laser truth at only \NumEEighteenCovII{} (p10 \NumEEighteenPTenII).
 The wider cluster intervals absorb more (\NumEEighteenCovIICluster), and the hull \mDualBoth recovers the truth there (\NumEEighteenHullIICluster) but not under uniform anchors (\NumEEighteenHullII).
-Earlier within-image methods behave the same (iPad anchors: \mLocal{} \NumArkLocalIpadCovUni, LSCP \NumArkLscpIpadCovUni).
+Calibration within the image behaves the same: \mLocalSplit covers the truth at \NumEEighteenLocalSplitLaserLo{} with laser probes and \NumEEighteenLocalSplitIpadLo--\NumEEighteenLocalSplitIpadHi{} with iPad probes.
 \end{itemize}
+\Cref{fig:sensor} shows why on three frames: the iPad reads a few per cent nearer than the laser over much of a frame, so probes that report the iPad calibrate intervals around the iPad's depth, and the laser truth falls beyond them.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/sensor_qual.pdf}
+\caption{\textbf{Probe source and truth coverage} (three ARKitScenes test frames from different visits; UniDepthV2, clustered layout, 180 structured anchors ($\bullet$, one cluster) reporting the iPad value, 20 probes ($\times$); split 0, one draw). Third column: log ratio of the iPad LiDAR to the laser depth (blue: iPad nearer; grey: no value). Right two columns: \mDual's misses of the laser truth (vermillion: truth farther than the interval, blue: nearer; dark grey: no ground truth), with laser and with iPad probes. Frames chosen among those whose coverage drops most from laser to iPad probes while staying near 0.9 with laser probes; averages over all frames are in \cref{tab:sensor}.}
+\label{fig:sensor}
+\end{figure}
 Two methods cover the truth in every cell.
 \mSplitCP does so because it calibrates on laser depth of other scenes, which a deployed system lacks.
 \mDistBoth does so through width, at \NumEEighteenDistBothRatio$\times$ \mDual's IS under uniform anchors with laser values.
