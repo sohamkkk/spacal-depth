@@ -1,0 +1,56 @@
+{
+  "dataset": "nyu",
+  "model": "dav2-indoor-large",
+  "exp_id": "e16",
+  "pattern": "uniform",
+  "sources": [
+    "clean",
+    "gauss:0.02",
+    "gauss:0.05",
+    "outlier:0.05",
+    "outlier:0.1",
+    "bias:0.05",
+    "lidar"
+  ],
+  "ks": [
+    20,
+    200
+  ],
+  "draws": 2,
+  "n_seeds": 3,
+  "alphas": [
+    0.1
+  ],
+  "beta": 0.1,
+  "dist_head_images": 200,
+  "lscp": true,
+  "max_images": 0,
+  "sources_run": [
+    "clean",
+    "gauss:0.02",
+    "gauss:0.05",
+    "outlier:0.05",
+    "outlier:0.1",
+    "bias:0.05"
+  ],
+  "n_images": 1449,
+  "n_pixels": 18803117,
+  "table_meta": {
+    "dataset": "nyu",
+    "model": "dav2-indoor-large",
+    "ensemble": [
+      "dav2-indoor-base",
+      "dav2-indoor-small"
+    ],
+    "stride": 4,
+    "min_valid": 100,
+    "dropped_images": 0,
+    "max_depth": 10.0,
+    "dropped_fields": []
+  },
+  "written": "2026-10-24T15:18:39.909068+00:00",
+  "git": "uncommitted",
+  "code_sha256": "88cd682fb406e373",
+  "python": "3.11.13",
+  "numpy": "2.4.6"
+}

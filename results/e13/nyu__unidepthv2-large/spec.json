@@ -1,0 +1,28 @@
+{
+  "dataset": "nyu",
+  "model": "unidepthv2-large",
+  "exp_id": "e13",
+  "pattern": "uniform",
+  "ks": [
+    20,
+    50,
+    200
+  ],
+  "draws": 3,
+  "n_seeds": 5,
+  "alphas": [
+    0.1
+  ],
+  "beta": 0.1,
+  "oracle": false,
+  "anchor_dist": true,
+  "max_images": 0,
+  "unit_frac": 1.0,
+  "n_images": 1449,
+  "n_pixels": 18803117,
+  "written": "2026-10-18T08:43:12.183611+00:00",
+  "git": "uncommitted",
+  "code_sha256": "198db7a3c97b9667",
+  "python": "3.11.13",
+  "numpy": "2.4.6"
+}

@@ -1,0 +1,35 @@
+{
+  "source": "kitti",
+  "target": "diode_outdoor",
+  "model": "depthpro",
+  "n_seeds": 10,
+  "alphas": [
+    0.1
+  ],
+  "beta": 0.1,
+  "scores": [
+    "S2-log",
+    "S3-flip",
+    "S4c-conf",
+    "S5-learned",
+    "S6-fact",
+    "S6-fact-conf"
+  ],
+  "calibrators": [
+    "K1",
+    "K1-scene",
+    "V4",
+    "K3-depth"
+  ],
+  "scores_run": [
+    "S2-log",
+    "S3-flip",
+    "S5-learned",
+    "S6-fact"
+  ],
+  "written": "2026-10-19T12:07:56.167409+00:00",
+  "git": "uncommitted",
+  "code_sha256": "c429628a2948a838",
+  "python": "3.11.13",
+  "numpy": "2.4.6"
+}

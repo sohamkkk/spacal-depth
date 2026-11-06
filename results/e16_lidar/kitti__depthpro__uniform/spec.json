@@ -1,0 +1,60 @@
+{
+  "dataset": "kitti",
+  "model": "depthpro",
+  "exp_id": "e16_lidar",
+  "pattern": "uniform",
+  "sources": [
+    "clean",
+    "lidar"
+  ],
+  "ks": [
+    20,
+    200
+  ],
+  "draws": 2,
+  "n_seeds": 3,
+  "alphas": [
+    0.1
+  ],
+  "beta": 0.1,
+  "dist_head_images": 200,
+  "lscp": true,
+  "max_images": 0,
+  "sources_run": [
+    "clean",
+    "lidar"
+  ],
+  "n_images": 1451,
+  "n_pixels": 23949992,
+  "table_meta": {
+    "dataset": "kitti",
+    "model": "depthpro",
+    "ensemble": [],
+    "stride": 2,
+    "min_valid": 100,
+    "dropped_images": 0,
+    "max_depth": 80.0,
+    "dropped_fields": [],
+    "lidar": {
+      "source": "KITTI data_depth_velodyne.zip (single raw scan)",
+      "n_images": 1452,
+      "n_missing": 0,
+      "missing_examples": [],
+      "cameras": {
+        "image_02": 1452
+      },
+      "frac_table_pixels_with_return": 0.14595580993232316,
+      "returns_per_image_median": 2458.0,
+      "returns_per_image_min": 175,
+      "frac_lattice_returns_without_gt": 0.40022986699351537,
+      "err_median_abs_log": 8.385150707113098e-08,
+      "err_frac_gt_10pct": 0.009683012220619352,
+      "err_frac_gt_25pct": 0.006155935686491239
+    }
+  },
+  "written": "2026-10-25T09:57:55.412171+00:00",
+  "git": "uncommitted",
+  "code_sha256": "335335b76b4ac28d",
+  "python": "3.11.13",
+  "numpy": "2.4.6"
+}

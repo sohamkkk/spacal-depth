@@ -1,0 +1,62 @@
+{
+  "dataset": "diode_outdoor",
+  "model": "dav2-outdoor-large",
+  "exp_id": "main",
+  "seed_start": 0,
+  "n_seeds": 20,
+  "alphas": [
+    0.05,
+    0.1,
+    0.2
+  ],
+  "beta": 0.1,
+  "delta": 0.1,
+  "frac_head": 0.3,
+  "frac_cal": 0.35,
+  "scores": null,
+  "calibrators": [
+    "K0",
+    "K1",
+    "K1-scene",
+    "RCPS",
+    "K2",
+    "K2-scene",
+    "K3-depth",
+    "K3-edge",
+    "V4",
+    "V4-scene"
+  ],
+  "raw": true,
+  "raw_only": false,
+  "max_images": 0,
+  "scores_run": [
+    "S0-const",
+    "S1-rel",
+    "S2-log",
+    "S3-flip",
+    "S3e-ens",
+    "S4-grad",
+    "S5-learned",
+    "S6-fact",
+    "S6-fact-flip"
+  ],
+  "table_meta": {
+    "dataset": "diode_outdoor",
+    "model": "dav2-outdoor-large",
+    "ensemble": [
+      "dav2-outdoor-base",
+      "dav2-outdoor-small"
+    ],
+    "stride": 2,
+    "min_valid": 100,
+    "dropped_images": 0,
+    "max_depth": 80.0,
+    "dropped_fields": []
+  },
+  "n_images": 446,
+  "n_pixels": 17115728,
+  "written": "2026-10-18T01:49:56.008015+00:00",
+  "git": "uncommitted",
+  "python": "3.11.13",
+  "numpy": "2.4.6"
+}

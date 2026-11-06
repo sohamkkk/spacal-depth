@@ -1,0 +1,36 @@
+{
+  "dataset": "arkitscenes",
+  "model": "unidepthv2-large",
+  "exp_id": "e20_env",
+  "pattern": "uniform",
+  "ks": [
+    200
+  ],
+  "draws": 10,
+  "n_seeds": 1,
+  "alphas": [
+    0.1
+  ],
+  "beta": 0.1,
+  "dist_k_random": 20,
+  "dual_gamma": 0.5,
+  "dist_head_images": 200,
+  "dist_single_bin": false,
+  "dist_no_g": false,
+  "max_images": 0,
+  "cells": [
+    "clean/lidar",
+    "lidar/lidar"
+  ],
+  "envelope": true,
+  "alpha_s": 0.05,
+  "alpha_e": 0.05,
+  "seed_start": 17,
+  "n_images": 5594,
+  "n_pixels": 23810270,
+  "written": "2026-11-04T21:13:19.717180+00:00",
+  "git": "uncommitted",
+  "code_sha256": "6a17b861beff784d",
+  "python": "3.11.13",
+  "numpy": "2.4.6"
+}

@@ -1,0 +1,44 @@
+{
+  "dataset": "arkitscenes",
+  "model": "dav2-indoor-large",
+  "exp_id": "e16_arkit",
+  "pattern": "uniform",
+  "sources": [
+    "clean",
+    "lidar"
+  ],
+  "ks": [
+    20,
+    200
+  ],
+  "draws": 2,
+  "n_seeds": 3,
+  "alphas": [
+    0.1
+  ],
+  "beta": 0.1,
+  "dist_head_images": 200,
+  "lscp": true,
+  "max_images": 0,
+  "sources_run": [
+    "clean",
+    "lidar"
+  ],
+  "n_images": 5594,
+  "n_pixels": 23810270,
+  "table_meta": {
+    "dataset": "arkitscenes",
+    "model": "dav2-indoor-large",
+    "ensemble": [],
+    "stride": 8,
+    "min_valid": 100,
+    "dropped_images": 0,
+    "max_depth": 10.0,
+    "dropped_fields": []
+  },
+  "written": "2026-11-01T15:44:19.442493+00:00",
+  "git": "uncommitted",
+  "code_sha256": "d08fe3d97db43f9a",
+  "python": "3.11.13",
+  "numpy": "2.4.6"
+}

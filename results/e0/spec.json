@@ -1,0 +1,31 @@
+{
+  "experiment": "E0 base metrics",
+  "cache_root": "/content/drive/MyDrive/spacal/cache",
+  "datasets_refreshed": [
+    "diode_indoor",
+    "diode_outdoor",
+    "kitti",
+    "nyu"
+  ],
+  "written": "2026-10-17T00:52:27.849249+00:00",
+  "git": "uncommitted",
+  "python": "3.13.15",
+  "numpy": "2.1.3",
+  "merged": {
+    "depthpro": {
+      "experiment": "E0 base metrics",
+      "cache_root": "/content/drive/MyDrive/spacal/cache_depthpro",
+      "datasets_refreshed": [
+        "diode_indoor",
+        "diode_outdoor",
+        "kitti",
+        "nyu"
+      ],
+      "written": "2026-10-18T09:11:01.832736+00:00",
+      "git": "uncommitted",
+      "code_sha256": "80080116b1927043",
+      "python": "3.13.15",
+      "numpy": "2.1.3"
+    }
+  }
+}

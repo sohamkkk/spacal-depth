@@ -1,0 +1,53 @@
+{
+  "dataset": "kitti",
+  "model": "unidepthv2-large",
+  "exp_id": "e16",
+  "pattern": "uniform",
+  "sources": [
+    "clean",
+    "gauss:0.02",
+    "gauss:0.05",
+    "outlier:0.05",
+    "outlier:0.1",
+    "bias:0.05",
+    "lidar"
+  ],
+  "ks": [
+    20,
+    200
+  ],
+  "draws": 2,
+  "n_seeds": 3,
+  "alphas": [
+    0.1
+  ],
+  "beta": 0.1,
+  "dist_head_images": 200,
+  "lscp": true,
+  "max_images": 0,
+  "sources_run": [
+    "clean",
+    "gauss:0.02",
+    "gauss:0.05",
+    "outlier:0.05",
+    "outlier:0.1",
+    "bias:0.05"
+  ],
+  "n_images": 1452,
+  "n_pixels": 23951174,
+  "table_meta": {
+    "dataset": "kitti",
+    "model": "unidepthv2-large",
+    "ensemble": [],
+    "stride": 2,
+    "min_valid": 100,
+    "dropped_images": 0,
+    "max_depth": 80.0,
+    "dropped_fields": []
+  },
+  "written": "2026-10-24T15:18:44.096532+00:00",
+  "git": "uncommitted",
+  "code_sha256": "88cd682fb406e373",
+  "python": "3.11.13",
+  "numpy": "2.4.6"
+}

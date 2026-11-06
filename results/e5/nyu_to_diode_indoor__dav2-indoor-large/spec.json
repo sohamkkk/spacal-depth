@@ -1,0 +1,34 @@
+{
+  "source": "nyu",
+  "target": "diode_indoor",
+  "model": "dav2-indoor-large",
+  "n_seeds": 10,
+  "alphas": [
+    0.1
+  ],
+  "beta": 0.1,
+  "scores": [
+    "S2-log",
+    "S3-flip",
+    "S4c-conf",
+    "S5-learned",
+    "S6-fact",
+    "S6-fact-conf"
+  ],
+  "calibrators": [
+    "K1",
+    "K1-scene",
+    "V4",
+    "K3-depth"
+  ],
+  "scores_run": [
+    "S2-log",
+    "S3-flip",
+    "S5-learned",
+    "S6-fact"
+  ],
+  "written": "2026-10-18T01:49:55.267068+00:00",
+  "git": "uncommitted",
+  "python": "3.11.13",
+  "numpy": "2.4.6"
+}

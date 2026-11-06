@@ -1,0 +1,28 @@
+{
+  "dataset": "nyu",
+  "model": "dav2-indoor-large",
+  "sizes": [
+    25,
+    50,
+    100,
+    200,
+    400
+  ],
+  "n_seeds": 50,
+  "alpha": 0.1,
+  "beta": 0.1,
+  "scores": [
+    "S2-log",
+    "S5-learned"
+  ],
+  "calibrators": [
+    "K0",
+    "K1",
+    "K1-scene",
+    "V4"
+  ],
+  "written": "2026-10-17T16:01:20.558144+00:00",
+  "git": "uncommitted",
+  "python": "3.11.13",
+  "numpy": "2.4.6"
+}

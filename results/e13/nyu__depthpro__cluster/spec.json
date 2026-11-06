@@ -1,0 +1,28 @@
+{
+  "dataset": "nyu",
+  "model": "depthpro",
+  "exp_id": "e13",
+  "pattern": "cluster",
+  "ks": [
+    20,
+    50,
+    200
+  ],
+  "draws": 3,
+  "n_seeds": 5,
+  "alphas": [
+    0.1
+  ],
+  "beta": 0.1,
+  "oracle": false,
+  "anchor_dist": true,
+  "max_images": 0,
+  "unit_frac": 1.0,
+  "n_images": 1449,
+  "n_pixels": 18803117,
+  "written": "2026-10-19T21:37:46.351323+00:00",
+  "git": "uncommitted",
+  "code_sha256": "23b1930db03e1b78",
+  "python": "3.11.13",
+  "numpy": "2.4.6"
+}

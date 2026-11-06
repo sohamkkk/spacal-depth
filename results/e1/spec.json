@@ -1,0 +1,27 @@
+{
+  "experiment": "E1 synthetic",
+  "reps": 100,
+  "n_cal": 200,
+  "n_test": 300,
+  "size": 48,
+  "alpha": 0.1,
+  "beta": 0.1,
+  "ells": [
+    0,
+    2,
+    8,
+    24
+  ],
+  "sigma_gs": [
+    0.0,
+    0.05,
+    0.1,
+    0.2
+  ],
+  "sigma_l": 0.1,
+  "seed": 0,
+  "written": "2026-10-17T11:45:17.602206+00:00",
+  "git": "uncommitted",
+  "python": "3.11.13",
+  "numpy": "2.4.6"
+}

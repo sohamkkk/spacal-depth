@@ -1,0 +1,28 @@
+{
+  "dataset": "kitti",
+  "model": "dav2-outdoor-large",
+  "exp_id": "e13",
+  "pattern": "edges",
+  "ks": [
+    20,
+    50,
+    200
+  ],
+  "draws": 3,
+  "n_seeds": 5,
+  "alphas": [
+    0.1
+  ],
+  "beta": 0.1,
+  "oracle": false,
+  "anchor_dist": true,
+  "max_images": 0,
+  "unit_frac": 1.0,
+  "n_images": 1452,
+  "n_pixels": 23951174,
+  "written": "2026-10-18T09:22:07.767354+00:00",
+  "git": "uncommitted",
+  "code_sha256": "198db7a3c97b9667",
+  "python": "3.11.13",
+  "numpy": "2.4.6"
+}

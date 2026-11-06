@@ -1,0 +1,38 @@
+{
+  "dataset": "kitti",
+  "model": "depthpro",
+  "exp_id": "e17_conf",
+  "pattern": "near",
+  "ks": [
+    50,
+    200
+  ],
+  "draws": 10,
+  "n_seeds": 1,
+  "alphas": [
+    0.1
+  ],
+  "beta": 0.1,
+  "oracle": false,
+  "anchor_dist": true,
+  "dist_kinds": [],
+  "dist_k_random": 20,
+  "dist_both_kind": "auto",
+  "dual": true,
+  "dual_gamma": 0.5,
+  "dual_rmax": true,
+  "lean": true,
+  "seed_start": 17,
+  "dist_head_images": 200,
+  "dist_single_bin": false,
+  "dist_no_g": false,
+  "max_images": 0,
+  "unit_frac": 1.0,
+  "n_images": 1452,
+  "n_pixels": 23951174,
+  "written": "2026-11-06T09:53:37.771549+00:00",
+  "git": "uncommitted",
+  "code_sha256": "6a17b861beff784d",
+  "python": "3.11.13",
+  "numpy": "2.4.6"
+}

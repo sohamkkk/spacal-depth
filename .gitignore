@@ -25,10 +25,21 @@ notebooks/.ipynb_checkpoints/
 requirements-lock-remote.txt
 
 # results: only the figures are versioned (raw CSVs go in a release archive)
-results/*
-!results/figures/
-!results/figures_qual/
-!results/figures_qual_kitti/
+results/**
+!results/**/
+!results/figures/**
+!results/figures_qual/**
+!results/figures_qual_kitti/**
+!results/**/summary.md
+!results/**/summary.csv
+!results/**/dist_summary.csv
+!results/**/spec.json
+!results/**/spec_s*.json
+!results/**/_confirm/*
+!results/**/_summary/*
+results/*_v1/
+results/qual_*/
+results/fix_k1scene/
 results_quick/
 results_depthpro/
 results_new/

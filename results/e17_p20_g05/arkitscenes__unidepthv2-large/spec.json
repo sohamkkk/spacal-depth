@@ -1,0 +1,37 @@
+{
+  "dataset": "arkitscenes",
+  "model": "unidepthv2-large",
+  "exp_id": "e17_p20_g05",
+  "pattern": "uniform",
+  "ks": [
+    50,
+    200
+  ],
+  "draws": 2,
+  "n_seeds": 3,
+  "alphas": [
+    0.1
+  ],
+  "beta": 0.1,
+  "oracle": false,
+  "anchor_dist": true,
+  "dist_kinds": [
+    "median"
+  ],
+  "dist_k_random": 20,
+  "dist_both_kind": "auto",
+  "dual": true,
+  "dual_gamma": 0.5,
+  "dist_head_images": 200,
+  "dist_single_bin": false,
+  "dist_no_g": false,
+  "max_images": 0,
+  "unit_frac": 1.0,
+  "n_images": 5594,
+  "n_pixels": 23810270,
+  "written": "2026-11-01T17:21:53.382513+00:00",
+  "git": "uncommitted",
+  "code_sha256": "d08fe3d97db43f9a",
+  "python": "3.11.13",
+  "numpy": "2.4.6"
+}

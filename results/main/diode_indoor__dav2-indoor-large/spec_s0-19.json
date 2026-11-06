@@ -1,0 +1,62 @@
+{
+  "dataset": "diode_indoor",
+  "model": "dav2-indoor-large",
+  "exp_id": "main",
+  "seed_start": 0,
+  "n_seeds": 20,
+  "alphas": [
+    0.05,
+    0.1,
+    0.2
+  ],
+  "beta": 0.1,
+  "delta": 0.1,
+  "frac_head": 0.3,
+  "frac_cal": 0.35,
+  "scores": null,
+  "calibrators": [
+    "K0",
+    "K1",
+    "K1-scene",
+    "RCPS",
+    "K2",
+    "K2-scene",
+    "K3-depth",
+    "K3-edge",
+    "V4",
+    "V4-scene"
+  ],
+  "raw": true,
+  "raw_only": false,
+  "max_images": 0,
+  "scores_run": [
+    "S0-const",
+    "S1-rel",
+    "S2-log",
+    "S3-flip",
+    "S3e-ens",
+    "S4-grad",
+    "S5-learned",
+    "S6-fact",
+    "S6-fact-flip"
+  ],
+  "table_meta": {
+    "dataset": "diode_indoor",
+    "model": "dav2-indoor-large",
+    "ensemble": [
+      "dav2-indoor-base",
+      "dav2-indoor-small"
+    ],
+    "stride": 2,
+    "min_valid": 100,
+    "dropped_images": 0,
+    "max_depth": 10.0,
+    "dropped_fields": []
+  },
+  "n_images": 325,
+  "n_pixels": 14457214,
+  "written": "2026-10-18T01:49:55.268331+00:00",
+  "git": "uncommitted",
+  "python": "3.11.13",
+  "numpy": "2.4.6"
+}

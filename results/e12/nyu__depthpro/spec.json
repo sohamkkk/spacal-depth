@@ -1,0 +1,32 @@
+{
+  "dataset": "nyu",
+  "model": "depthpro",
+  "n_seeds": 20,
+  "alphas": [
+    0.05,
+    0.1
+  ],
+  "beta": 0.1,
+  "n_lanes": 3,
+  "min_roi_px": 20,
+  "anchor_k": 20,
+  "thresholds": [
+    1.0,
+    1.5,
+    2.0,
+    2.5
+  ],
+  "max_images": 0,
+  "roi": [
+    0.2,
+    0.8,
+    0.25,
+    0.75
+  ],
+  "n_images": 1449,
+  "written": "2026-10-19T20:50:43.062762+00:00",
+  "git": "uncommitted",
+  "code_sha256": "23b1930db03e1b78",
+  "python": "3.11.13",
+  "numpy": "2.4.6"
+}
