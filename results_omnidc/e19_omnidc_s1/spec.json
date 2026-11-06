@@ -1,0 +1,34 @@
+{
+  "dataset": "arkitscenes",
+  "model": "unidepthv2-large",
+  "anchors": "/content/omni_anchors/arkitscenes",
+  "omni": "/content/omnidc_merged",
+  "exp_id": "e19_omnidc_s1",
+  "patterns": [
+    "uniform",
+    "cluster"
+  ],
+  "k": 200,
+  "seeds": [
+    1
+  ],
+  "draws": [
+    0
+  ],
+  "omni_sources": [
+    "clean",
+    "lidar"
+  ],
+  "alpha": 0.1,
+  "beta": 0.1,
+  "dual_gamma": 0.5,
+  "dist_head_images": 200,
+  "max_images": 0,
+  "dist_no_g": false,
+  "dist_single_bin": false,
+  "written": "2026-11-02T18:35:06.432230+00:00",
+  "git": "uncommitted",
+  "code_sha256": "c9f349aa82882c7c",
+  "python": "3.13.16",
+  "numpy": "2.1.3"
+}

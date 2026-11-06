@@ -6,13 +6,13 @@ m3d = pytest.importorskip("src.models.metric3d")
 
 
 class FakeHub(torch.nn.Module):
-    """Canonical depth 1000 everywhere (metric depth = the focal the network saw), confidence 0.75."""
+    """Canonical depth 100 everywhere (metric depth = focal seen / 10, below MAX_DEPTH), confidence 0.75."""
 
     def inference(self, data):
         x = data["input"]
         assert tuple(x.shape[-2:]) == m3d.INPUT_SIZE
         ones = torch.ones(x.shape[0], 1, *x.shape[-2:])
-        return 1000.0 * ones, 0.75 * ones, {}
+        return 100.0 * ones, 0.75 * ones, {}
 
 
 def test_metric_scale_and_shapes(monkeypatch):
@@ -22,7 +22,7 @@ def test_metric_scale_and_shapes(monkeypatch):
     out = model.predict(rgb, focal=721.5)
     scale = min(m3d.INPUT_SIZE[0] / 352, m3d.INPUT_SIZE[1] / 1216)
     assert out["depth"].shape == (352, 1216) and out["conf"].shape == (352, 1216)
-    np.testing.assert_allclose(out["depth"], 721.5 * scale, rtol=1e-5)
+    np.testing.assert_allclose(out["depth"], 721.5 * scale / 10, rtol=1e-5)
     np.testing.assert_allclose(out["conf"], 0.25, rtol=1e-5)
     flip = model.predict_flip(rgb, focal=721.5)
     np.testing.assert_allclose(flip["depth"], out["depth"])
